@@ -68,7 +68,7 @@ export default function HomeManagePage() {
   return (
     <AdminModern title="จัดการหน้าโฮม">
       {/* Header */}
-      <h1 className="text-3xl font-bold mb-8 border-b border-gray-300 pb-4">
+      <h1 className="text-2xl font-bold mb-8 border-b border-gray-300 pb-4">
         จัดการหน้าโฮม
       </h1>
 
@@ -145,7 +145,7 @@ function CreateProductSection() {
   }, []);
 
   const onChange = (
-    e: ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>
+    e: ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>,
   ) => {
     const { name, value, files } = e.target as any;
     if (name === "image" && files) {
@@ -391,7 +391,7 @@ function ManageProductSection() {
     });
     if (res.ok) {
       setProducts((p) =>
-        p.map((x) => (x.id === id ? { ...x, isFeatured: !current } : x))
+        p.map((x) => (x.id === id ? { ...x, isFeatured: !current } : x)),
       );
     } else {
       alert("อัปเดตสถานะสินค้าไม่สำเร็จ");
@@ -411,20 +411,20 @@ function ManageProductSection() {
   };
 
   const openEditModal = (product: Product) => {
-  setEditProduct(product);
-  setEditForm({
-    nameTh: product.nameTh,
-    nameEn: product.nameEn,
-    descTh: product.descTh || "",
-    descEn: product.descEn || "",
-    price: product.price.toString(),
-    salePrice: product.salePrice?.toString() || "",
-    stock: product.stock.toString(),
-    categoryId: product.categoryId || "",
-  });
-  setEditPreview(product.imageUrl || "");
-  setEditFile(null);
-};
+    setEditProduct(product);
+    setEditForm({
+      nameTh: product.nameTh,
+      nameEn: product.nameEn,
+      descTh: product.descTh || "",
+      descEn: product.descEn || "",
+      price: product.price.toString(),
+      salePrice: product.salePrice?.toString() || "",
+      stock: product.stock.toString(),
+      categoryId: product.categoryId || "",
+    });
+    setEditPreview(product.imageUrl || "");
+    setEditFile(null);
+  };
 
   const closeEditModal = () => {
     setEditProduct(null);
@@ -432,17 +432,17 @@ function ManageProductSection() {
   };
 
   const handleEditChange = (
-  e: ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>
-) => {
-  const { name, value, files } = e.target as any;
-  if (name === "image" && files) {
-    const f = files[0] as File;
-    setEditFile(f);
-    setEditPreview(URL.createObjectURL(f));
-  } else {
-    setEditForm((f) => ({ ...f, [name]: value }));
-  }
-};
+    e: ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>,
+  ) => {
+    const { name, value, files } = e.target as any;
+    if (name === "image" && files) {
+      const f = files[0] as File;
+      setEditFile(f);
+      setEditPreview(URL.createObjectURL(f));
+    } else {
+      setEditForm((f) => ({ ...f, [name]: value }));
+    }
+  };
 
   const handleEditSubmit = async (e: FormEvent) => {
     e.preventDefault();
@@ -468,7 +468,7 @@ function ManageProductSection() {
     if (res.ok) {
       const updated: Product = await res.json();
       setProducts((p) =>
-        p.map((item) => (item.id === updated.id ? updated : item))
+        p.map((item) => (item.id === updated.id ? updated : item)),
       );
       closeEditModal();
     } else {
@@ -708,7 +708,7 @@ function ManageCategorySection() {
       return alert(
         locale === "th"
           ? "กรุณากรอกชื่อทั้งสองภาษา"
-          : "Please enter both Thai and English names"
+          : "Please enter both Thai and English names",
       );
     }
 
@@ -1053,7 +1053,7 @@ export function ManageBannerSection() {
   }, []);
 
   const onChange = (
-    e: ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>
+    e: ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>,
   ) => {
     const { name, value, files } = e.target as any;
     if (name === "image" && files) {
@@ -1132,7 +1132,7 @@ export function ManageBannerSection() {
   const closeEditModal = () => setEditBanner(null);
 
   const handleEditChange = (
-    e: ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>
+    e: ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>,
   ) => {
     const { name, value, files } = e.target as any;
     if (name === "image" && files) {
@@ -1316,9 +1316,7 @@ export function ManageBannerSection() {
             className="bg-white rounded-lg shadow-lg w-full max-w-lg max-h-[90vh] overflow-auto p-6"
             style={{ scrollbarWidth: "thin", scrollbarColor: "#888 #f1f1f1" }} // เพิ่ม style scroll bar สำหรับ Firefox
           >
-            <h3 className="text-xl mb-4">
-              แก้ไขแบนเนอร์ / Edit Banner
-            </h3>
+            <h3 className="text-xl mb-4">แก้ไขแบนเนอร์ / Edit Banner</h3>
             <form onSubmit={handleEditSubmit} className="space-y-4">
               <label className="block">
                 Title (TH):

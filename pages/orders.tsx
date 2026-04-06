@@ -136,7 +136,7 @@ function getItemImage(it: OrderItem): string | null {
     (p && (p as any).image) ||
     pickFirstStringByKey(
       p,
-      /(image|img|thumb|thumbnail|picture|photo|url)$/i
+      /(image|img|thumb|thumbnail|picture|photo|url)$/i,
     ) ||
     pickFirstStringByKey(p, /^(image|img|thumb|thumbnail|picture|photo|url)/i);
 
@@ -145,7 +145,7 @@ function getItemImage(it: OrderItem): string | null {
     it.image ||
     pickFirstStringByKey(
       it,
-      /(image|img|thumb|thumbnail|picture|photo|url)$/i
+      /(image|img|thumb|thumbnail|picture|photo|url)$/i,
     ) ||
     pickFirstStringByKey(it, /^(image|img|thumb|thumbnail|picture|photo|url)/i);
 
@@ -177,7 +177,7 @@ export default function OrdersPage() {
         hour: "2-digit",
         minute: "2-digit",
       }),
-    [lang]
+    [lang],
   );
 
   // SWR fetcher
@@ -218,7 +218,7 @@ export default function OrdersPage() {
   // กรองตามสถานะ
   const filteredOrders = useMemo(
     () => (orders ?? []).filter((o) => o.status.toLowerCase() === activeStatus),
-    [orders, activeStatus]
+    [orders, activeStatus],
   );
 
   // ยืนยันได้รับสินค้า
@@ -231,15 +231,20 @@ export default function OrdersPage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ status: "completed" }),
       });
+
       if (!res.ok) throw new Error();
+
       // optimistic update
       mutate(
         (prev) =>
           (prev ?? []).map((o) =>
-            o.id === orderId ? { ...o, status: "COMPLETED" } : o
+            o.id === orderId ? { ...o, status: "COMPLETED" } : o,
           ),
-        { revalidate: false }
+        { revalidate: false },
       );
+
+      // ✅ สลับ tab ไป completed
+      setActiveStatus("completed");
     } catch {
       alert(t("ordersConfirmError"));
     } finally {
@@ -277,14 +282,14 @@ export default function OrdersPage() {
                       className={[
                         "inline-flex items-center gap-2 rounded-full border px-4 py-2 text-sm font-medium transition",
                         isActive
-                          ? "bg-gray-900 text-white border-gray-900"
-                          : "bg-white text-gray-700 border-gray-300 hover:bg-gray-50",
+                          ? `${STATUS_META[st].chip} border-current`
+                          : "bg-white text-gray-600 border-gray-300 hover:bg-gray-50",
                       ].join(" ")}
                     >
                       <Icon
                         className={
                           isActive
-                            ? "h-4 w-4 text-white"
+                            ? "h-4 w-4 " + STATUS_META[st].text
                             : "h-4 w-4 text-gray-500"
                         }
                       />
@@ -336,7 +341,6 @@ export default function OrdersPage() {
                       status: t(`status.${activeStatus}`),
                     })}
                   </p>
-                  <p className="text-gray-500 mt-1">{t("ordersEmptyHint")}</p>
                 </div>
               )}
 
@@ -434,9 +438,20 @@ export default function OrdersPage() {
                             {/* ปุ่มยืนยันรับของ (ถ้ามี) */}
                             {st === "shipped" && (
                               <button
-                                onClick={() => confirmReceived(o.id)}
+                                onClick={() => {
+                                  if (
+                                    confirm("ยืนยันว่าได้รับสินค้าแล้วใช่ไหม?")
+                                  ) {
+                                    confirmReceived(o.id);
+                                  }
+                                }}
                                 disabled={updatingId === o.id}
-                                className="mt-4 inline-flex items-center gap-2 px-4 py-2 rounded-md bg-black text-white hover:bg-gray-900 disabled:opacity-60"
+                                className="mt-4 inline-flex items-center gap-2 px-4 py-2 rounded-lg
+  bg-red-600 text-white font-medium
+  hover:bg-red-700 active:scale-95
+  focus:outline-none focus:ring-2 focus:ring-red-200
+  disabled:opacity-50 disabled:cursor-not-allowed
+  transition"
                               >
                                 {updatingId === o.id ? (
                                   <>

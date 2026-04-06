@@ -56,8 +56,12 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
       if (!itemsStr) return res.status(400).json({ error: "Missing order items" });
 
-      const items: { productId: string; quantity: number; priceAtPurchase: number }[] =
-        JSON.parse(itemsStr);
+      const items: {
+        cartItemId?: string;
+        productId: string;
+        quantity: number;
+        priceAtPurchase: number;
+      }[] = JSON.parse(itemsStr);
 
       const localeParam = req.query.locale;
       const locale =
@@ -65,24 +69,59 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
           ? localeParam
           : "th";
 
-      // ตรวจสต็อก
-      for (const it of items) {
-        const p = await prisma.product.findUnique({
-          where: { id: it.productId },
-          select: {
-            stock: true,
-            translations: { where: { locale }, take: 1, select: { name: true } },
+      const cartItemIds = items.map((it) => it.cartItemId).filter(Boolean) as string[];
+      if (cartItemIds.length !== items.length) {
+        return res.status(400).json({ error: "ข้อมูลสินค้าในตะกร้าไม่ถูกต้อง" });
+      }
+
+      const cartItems = await prisma.cartItem.findMany({
+        where: {
+          id: { in: cartItemIds },
+          cart: { userId: user.id },
+        },
+        include: {
+          product: {
+            include: {
+              translations: { where: { locale }, take: 1, select: { name: true } },
+            },
           },
-        });
-        if (!p) return res.status(400).json({ error: `ไม่พบสินค้า id: ${it.productId}` });
-        const name = p.translations[0]?.name ?? "Unknown";
-        if (p.stock < it.quantity) {
-          return res.status(400).json({ error: `สต็อกสินค้า ${name} ไม่เพียงพอ` });
+        },
+      });
+
+      if (cartItems.length !== items.length) {
+        return res.status(400).json({ error: "พบสินค้าบางรายการไม่อยู่ในตะกร้าปัจจุบัน" });
+      }
+
+      const cartItemMap = new Map(cartItems.map((item) => [item.id, item]));
+
+      const normalizedItems = items.map((it) => {
+        const cartItem = cartItemMap.get(it.cartItemId as string);
+        if (!cartItem) throw new Error("CART_ITEM_NOT_FOUND");
+        if (cartItem.productId !== it.productId) throw new Error("CART_ITEM_PRODUCT_MISMATCH");
+        if (cartItem.quantity !== it.quantity) throw new Error("CART_ITEM_QUANTITY_MISMATCH");
+
+        const unitPrice =
+          cartItem.unitPrice ?? cartItem.product.salePrice ?? cartItem.product.price;
+
+        return {
+          cartItemId: cartItem.id,
+          productId: cartItem.productId,
+          quantity: cartItem.quantity,
+          priceAtPurchase: unitPrice,
+          productName: cartItem.product.translations[0]?.name ?? "Unknown",
+          stock: cartItem.product.stock,
+        };
+      });
+
+      // ตรวจสต็อก
+      for (const it of normalizedItems) {
+        if (it.stock < it.quantity) {
+          return res.status(400).json({ error: `สต็อกสินค้า ${it.productName} ไม่เพียงพอ` });
         }
       }
 
       // -------- ยอดรวม / คูปอง --------
-      const totalAmount = items.reduce(
+      const totalAmount = normalizedItems.reduce(
         (sum, it) => sum + it.priceAtPurchase * it.quantity,
         0
       );
@@ -136,7 +175,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
             totalAmount: totalAfterDiscount,
             couponId: couponId ?? undefined,
             items: {
-              create: items.map((it) => ({
+              create: normalizedItems.map((it) => ({
                 productId: it.productId,
                 quantity: it.quantity,
                 priceAtPurchase: it.priceAtPurchase,
@@ -157,7 +196,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         });
 
         // ตัดสต็อก
-        for (const it of items) {
+        for (const it of normalizedItems) {
           await tx.product.update({
             where: { id: it.productId },
             data: { stock: { decrement: it.quantity } },

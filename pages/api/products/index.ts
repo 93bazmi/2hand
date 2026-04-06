@@ -35,8 +35,8 @@ export default async function handler(
       } = req.body ?? {};
 
       // validate ขั้นต่ำ
-      if (!nameTh || !nameEn) {
-        return res.status(400).json({ error: "กรุณาระบุชื่อสินค้า TH/EN" });
+      if (!nameTh) {
+        return res.status(400).json({ error: "กรุณาระบุชื่อสินค้า TH" });
       }
       if (price == null || stock == null) {
         return res.status(400).json({ error: "กรุณาระบุราคาและสต็อก" });
@@ -69,7 +69,7 @@ export default async function handler(
           data: {
             productId: p.id,
             locale: "en",
-            name: String(nameEn),
+            name: String(nameEn || nameTh),
             description: descEn ? String(descEn) : null,
           },
         });

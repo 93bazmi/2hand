@@ -14,6 +14,17 @@ export type CreateAuctionInput = {
 };
 
 export async function createAuction(input: CreateAuctionInput) {
+  const now = new Date();
+
+let status: AuctionStatus;
+
+if (now >= input.startAt && now < input.endAt) {
+  status = "LIVE";
+} else if (now >= input.endAt) {
+  status = "ENDED";
+} else {
+  status = "SCHEDULED";
+}
   const created = await prisma.auction.create({
     data: {
       productId: input.productId,
@@ -25,7 +36,7 @@ export async function createAuction(input: CreateAuctionInput) {
       bidIncrement: input.bidIncrement ?? 10,
       startAt: input.startAt,
       endAt: input.endAt,
-      status: "SCHEDULED",
+      status,
     },
   });
   return getAuctionById(created.id);
@@ -83,13 +94,54 @@ export async function closeAuction(id: string) {
 
   const top = a.bids[0] ?? null;
 
-  await prisma.auction.update({
-    where: { id },
-    data: {
-      status: "ENDED",
-      currentPrice: top ? top.amount : a.currentPrice,
-      winnerBidId: top ? top.id : null,
-    },
+  await prisma.$transaction(async (tx) => {
+    await tx.auction.update({
+      where: { id },
+      data: {
+        status: "ENDED",
+        currentPrice: top ? top.amount : a.currentPrice,
+        winnerBidId: top ? top.id : null,
+      },
+    });
+
+    if (!top) return;
+
+    const cart = await tx.cart.upsert({
+      where: { userId: top.userId },
+      create: { userId: top.userId },
+      update: {},
+      select: { id: true },
+    });
+
+    const existingAuctionItem = await tx.cartItem.findFirst({
+      where: {
+        cartId: cart.id,
+        auctionId: a.id,
+      },
+      select: { id: true },
+    });
+
+    if (existingAuctionItem) {
+      await tx.cartItem.update({
+        where: { id: existingAuctionItem.id },
+        data: {
+          productId: a.productId,
+          quantity: 1,
+          unitPrice: top.amount,
+        },
+      });
+      return;
+    }
+
+    await tx.cartItem.create({
+      data: {
+        cartId: cart.id,
+        productId: a.productId,
+        quantity: 1,
+        unitPrice: top.amount,
+        auctionId: a.id,
+      },
+    });
   });
 
   return getAuctionById(id);

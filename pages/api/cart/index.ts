@@ -59,13 +59,17 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       const items =
         (cart?.items ?? []).map((it: CartItemWithProduct) => {
           const trans = it.product.translations[0];
+          const effectivePrice = it.unitPrice ?? it.product.salePrice ?? it.product.price;
           return {
             id: it.id,
             quantity: it.quantity,
+            unitPrice: it.unitPrice,
+            auctionId: it.auctionId,
             product: {
               id: it.product.id,
               name: trans?.name ?? "",
-              price: it.product.price,
+              price: effectivePrice,
+              basePrice: it.product.price,
               salePrice: it.product.salePrice,
               imageUrl: it.product.imageUrl,
               stock: it.product.stock,
@@ -82,7 +86,12 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
   // POST /api/cart → เพิ่มหรืออัปเดตจำนวน (เพิ่มจำนวนเข้าไป) พร้อมกันจำนวนไม่ให้เกิน stock
   if (req.method === "POST") {
-    const { productId, quantity } = req.body as { productId: string; quantity: number };
+    const { productId, quantity, auctionId, unitPrice } = req.body as {
+      productId: string;
+      quantity: number;
+      auctionId?: string;
+      unitPrice?: number;
+    };
 
     if (!productId || !quantity || quantity <= 0) {
       return res.status(400).json({ error: "Invalid productId or quantity" });
@@ -106,12 +115,17 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
         // หา item เดิม
         const existing = await tx.cartItem.findFirst({
-          where: { cartId: cart.id, productId },
+          where: {
+            cartId: cart.id,
+            productId,
+            auctionId: auctionId ?? null,
+          },
           select: { id: true, quantity: true },
         });
 
+        const isAuctionItem = Boolean(auctionId);
         const current = existing?.quantity ?? 0;
-        const next = current + quantity;
+        const next = isAuctionItem ? 1 : current + quantity;
 
         if (next > product.stock) {
           // ห้ามเกินสต็อก
@@ -122,10 +136,20 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         const item = existing
           ? await tx.cartItem.update({
               where: { id: existing.id },
-              data: { quantity: next },
+              data: {
+                quantity: next,
+                unitPrice: isAuctionItem ? unitPrice ?? null : null,
+                auctionId: auctionId ?? null,
+              },
             })
           : await tx.cartItem.create({
-              data: { cartId: cart.id, productId, quantity },
+              data: {
+                cartId: cart.id,
+                productId,
+                quantity: next,
+                unitPrice: isAuctionItem ? unitPrice ?? null : null,
+                auctionId: auctionId ?? null,
+              },
             });
 
         return { blocked: false as const, item };
@@ -161,9 +185,13 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       const updated = await prisma.$transaction(async (tx: TxClient) => {
         const item = await tx.cartItem.findUnique({
           where: { id: itemId },
-          select: { id: true, productId: true },
+          select: { id: true, productId: true, auctionId: true },
         });
         if (!item) throw new Error("ITEM_NOT_FOUND");
+
+        if (item.auctionId && quantity !== 1) {
+          throw new Error("AUCTION_ITEM_QUANTITY_LOCKED");
+        }
 
         const product = await tx.product.findUnique({
           where: { id: item.productId },

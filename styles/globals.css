@@ -5,6 +5,16 @@
 @tailwind components;
 @tailwind utilities;
 
+@layer base {
+  html {
+    font-family: "Prompt", ui-sans-serif, system-ui, sans-serif;
+  }
+
+  .user-page {
+    font-family: "Prompt", ui-sans-serif, system-ui, sans-serif;
+  }
+}
+
 /* Components layer: reusable custom classes */
 /* @layer components {
   .container {

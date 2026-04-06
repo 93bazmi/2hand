@@ -38,14 +38,14 @@ export default function AdminQaPage({ faqs }: Props) {
       return;
     }
     setList((prev) =>
-      prev.map((f) => (f.id === id ? { ...f, answer: ans } : f))
+      prev.map((f) => (f.id === id ? { ...f, answer: ans } : f)),
     );
     setEditing((e) => ({ ...e, [id]: "" }));
   };
 
   return (
-    <AdminModern title="จัดการคำถาม (Admin)">
-      <h1 className="text-3xl font-bold mb-4">จัดการคำถาม (Admin)</h1>
+    <AdminModern title="จัดการคำถาม">
+      <h1 className="text-2xl font-bold mb-4">จัดการคำถาม</h1>
       <Link href="/" className="text-blue-600 mb-4 block">
         &larr; กลับหน้าหลัก
       </Link>

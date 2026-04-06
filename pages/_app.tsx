@@ -4,10 +4,8 @@ import "@/styles/admin-modern.css";
 import type { AppProps } from "next/app";
 import { AuthProvider } from "../context/AuthContext";
 import Head from "next/head";
-import {
-  QueryClient,
-  QueryClientProvider,
-} from "@tanstack/react-query";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { useRouter } from "next/router";
 
 // สร้าง instance เดียวตลอดแอป
 const queryClient = new QueryClient();
@@ -17,6 +15,9 @@ import appWithI18n from "next-translate/appWithI18n";
 import i18nConfig from "../i18n.json";
 
 function MyApp({ Component, pageProps }: AppProps) {
+  const router = useRouter();
+  const isAdminPage = router.pathname.startsWith("/admin");
+
   return (
     <>
       <Head>
@@ -26,7 +27,9 @@ function MyApp({ Component, pageProps }: AppProps) {
       {/* ครอบด้วย React Query provider */}
       <QueryClientProvider client={queryClient}>
         <AuthProvider>
-          <Component {...pageProps} />
+          <div className={isAdminPage ? "admin-page" : "user-page"}>
+            <Component {...pageProps} />
+          </div>
         </AuthProvider>
       </QueryClientProvider>
     </>

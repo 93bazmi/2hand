@@ -7,6 +7,7 @@ import Layout from "@/components/Layout";
 import ProductCard from "@/components/ProductCard";
 import { prisma } from "@/lib/prisma";
 import { Product, Category } from "@/types/product";
+import { Search, X, ListFilter } from "lucide-react";
 
 interface AllProductsProps {
   products: Product[];
@@ -38,7 +39,7 @@ export default function AllProductsPage({
   };
 
   const filtered = products.filter((p) =>
-    p.name.toLowerCase().includes(searchTerm.toLowerCase())
+    p.name.toLowerCase().includes(searchTerm.toLowerCase()),
   );
 
   return (
@@ -47,27 +48,60 @@ export default function AllProductsPage({
         {discount ? t("onSale") : t("allProducts")}
       </h1>
 
-      {/* Controls */}
-      <div className="flex flex-col md:flex-row gap-4 mb-6">
-        <input
-          type="text"
-          value={searchTerm}
-          onChange={handleSearch}
-          placeholder={t("searchPlaceholder")}
-          className="flex-1 border rounded p-2"
-        />
-        <select
-          value={selectedCategory ?? ""}
-          onChange={handleCategoryChange}
-          className="border rounded p-2"
-        >
-          <option value="">{t("allCategories")}</option>
-          {categories.map((c) => (
-            <option key={c.id} value={c.id}>
-              {c.name}
-            </option>
-          ))}
-        </select>
+      <div className="mb-6">
+        <div className="flex flex-col md:flex-row gap-3 items-stretch md:items-center">
+          {/* Search */}
+          <div className="relative flex-1">
+            <Search
+              size={18}
+              className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"
+            />
+
+            <input
+              type="text"
+              value={searchTerm}
+              onChange={handleSearch}
+              placeholder={t("searchPlaceholder")}
+              className="w-full pl-10 pr-10 py-2 rounded-lg border border-gray-300
+        focus:outline-none focus:ring-1 focus:ring-red-200 focus:border-red-500
+        transition"
+            />
+
+            {searchTerm && (
+              <button
+                onClick={() => handleSearch({ target: { value: "" } } as any)}
+                className="absolute right-2 top-1/2 -translate-y-1/2
+          text-gray-400 hover:text-black transition"
+              >
+                <X size={16} />
+              </button>
+            )}
+          </div>
+
+          {/* Category Dropdown */}
+          <div className="relative w-full md:w-56 ">
+            <ListFilter
+              size={18}
+              className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none"
+            />
+
+            <select
+              value={selectedCategory ?? ""}
+              onChange={handleCategoryChange}
+              className="w-full pl-12 pr-10 py-2 rounded-lg border border-gray-300
+  bg-white appearance-none
+  focus:outline-none focus:ring-1 focus:ring-red-200 focus:border-red-500
+  transition cursor-pointer text-center md:text-left"
+            >
+              <option value="">{t("allCategories")}</option>
+              {categories.map((c) => (
+                <option key={c.id} value={c.id}>
+                  {c.name}
+                </option>
+              ))}
+            </select>
+          </div>
+        </div>
       </div>
 
       {/* Product Grid */}

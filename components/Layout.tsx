@@ -37,6 +37,22 @@ export default function Layout({ children, title = "2hand" }: LayoutProps) {
     localStorage.setItem("cookieConsent", accepted ? "true" : "false");
     setShowCookieConsent(false);
   };
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+
+    const seenPromo = localStorage.getItem("promoShown");
+    if (!seenPromo) {
+      setShowPromo(true);
+      localStorage.setItem("promoShown", "true");
+    }
+
+    const cookieConsent = localStorage.getItem("cookieConsent");
+    if (!cookieConsent) {
+      setShowCookieConsent(true);
+    }
+  }, []);
 
   return (
     <div className="flex flex-col min-h-screen bg-white">
@@ -64,9 +80,9 @@ export default function Layout({ children, title = "2hand" }: LayoutProps) {
         </div>
       </header>
 
-      {/* promo + cookie */}
-      <PromoModal show={showPromo} onClose={() => setShowPromo(false)} />
-      {showCookieConsent && (
+      {/*cookie */}
+
+      {mounted && showCookieConsent && (
         <CookieConsent
           onAccept={() => handleCookieConsent(true)}
           onDecline={() => handleCookieConsent(false)}

@@ -23,15 +23,26 @@ const fmtTHB = (n: number) =>
   });
 
 function useCountdown(iso: string) {
-  const [now, setNow] = useState(() => Date.now());
+  const [now, setNow] = useState<number | null>(null);
+
   useEffect(() => {
-    const t = setInterval(() => setNow(Date.now()), 1000);
+    const update = () => setNow(Date.now());
+
+    update(); // เริ่มครั้งแรก
+    const t = setInterval(update, 1000);
+
     return () => clearInterval(t);
   }, []);
+
   return useMemo(() => {
+    if (now === null) {
+      return { dd: 0, hh: 0, mm: 0, ss: 0, isOver: false };
+    }
+
     const end = new Date(iso).getTime();
     let diff = Math.max(end - now, 0);
     const isOver = diff === 0;
+
     const dd = Math.floor(diff / 86400000);
     diff -= dd * 86400000;
     const hh = Math.floor(diff / 3600000);
@@ -39,12 +50,19 @@ function useCountdown(iso: string) {
     const mm = Math.floor(diff / 60000);
     diff -= mm * 60000;
     const ss = Math.floor(diff / 1000);
+
     return { dd, hh, mm, ss, isOver };
   }, [iso, now]);
 }
 
 function TimeBadge({ iso }: { iso: string }) {
   const { dd, hh, mm, ss, isOver } = useCountdown(iso);
+
+  // 🔥 กัน hydration mismatch
+  if (dd === 0 && hh === 0 && mm === 0 && ss === 0 && !isOver) {
+    return null;
+  }
+
   if (isOver) {
     return (
       <div className="inline-flex items-center gap-1 rounded-md bg-red-600 px-2 py-1 text-[11px] font-semibold text-white">
@@ -53,6 +71,7 @@ function TimeBadge({ iso }: { iso: string }) {
       </div>
     );
   }
+
   return (
     <div className="inline-flex items-center gap-2 rounded-md bg-black/75 px-2 py-1 text-white">
       <Clock size={14} className="opacity-90" />
@@ -69,7 +88,7 @@ export default function AuctionGrid({ items }: { items: AuctionCardItem[] }) {
   if (!items?.length) {
     return (
       <div className="rounded-xl border border-dashed p-8 text-center text-sm text-gray-500">
-        ยังไม่มีรายการประมูล
+        ยังไม่มีรายการประมูลในขณะนี้
       </div>
     );
   }

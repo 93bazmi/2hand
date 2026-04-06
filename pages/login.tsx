@@ -31,16 +31,25 @@ export default function LoginPage() {
   const onSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
+
     try {
       setLoading(true);
-      await login(form.email, form.password, form.remember);
-      // router.push("/home");
+
+      const user = await login(form.email, form.password, form.remember);
+
+      // ✅ เช็ค role
+      if (user?.role === "ADMIN") {
+        router.push("/admin");
+      } else {
+        router.push("/");
+      }
     } catch (err: any) {
+      console.log("LOGIN ERROR:", err);
       const msg = String(err?.message || "");
       setError(
         /invalid credentials/i.test(msg)
           ? "อีเมลหรือรหัสผ่านไม่ถูกต้อง"
-          : msg || "ไม่สามารถเข้าสู่ระบบได้"
+          : msg || "ไม่สามารถเข้าสู่ระบบได้",
       );
     } finally {
       setLoading(false);
@@ -54,7 +63,7 @@ export default function LoginPage() {
       const r = await fetch(
         `/api/auth/google/url?remember=${
           form.remember ? 1 : 0
-        }&redirect=${encodeURIComponent("/")}`
+        }&redirect=${encodeURIComponent("/auth/callback")}`,
       );
       const js = await r.json();
       if (js?.url) {
@@ -92,10 +101,12 @@ export default function LoginPage() {
 
   return (
     <AuthCard imageSrc="/images/logo_2hand.png" imageAlt="I Love 2Hand">
-      <div className="w-full">
-        <h1 className="text-2xl font-semibold text-center">เข้าสู่ระบบ</h1>
+      <div className="w-full max-w-md mx-auto">
+        <h1 className="text-2xl font-semibold text-center text-black">
+          เข้าสู่ระบบ
+        </h1>
 
-        <form className="mt-6 space-y-6" onSubmit={onSubmit} noValidate>
+        <form className="mt-6 space-y-5" onSubmit={onSubmit} noValidate>
           {error && (
             <div className="rounded-lg border border-rose-200 bg-rose-50 px-3 py-2 text-sm text-rose-700">
               {error}
@@ -116,7 +127,10 @@ export default function LoginPage() {
                 onChange={onChange}
                 required
                 autoComplete="username"
-                className="w-full rounded-xl border bg-white px-3.5 py-2.5 pr-11 border-slate-300 focus:outline-none focus:ring-4 focus:ring-indigo-100"
+                className="w-full rounded-xl border border-gray-300 bg-white
+px-3.5 py-2.5 pr-11
+focus:outline-none focus:ring-2 focus:ring-red-200 focus:border-red-500
+transition"
               />
               <span className="pointer-events-none absolute inset-y-0 right-0 mr-1.5 my-1.5 inline-flex items-center justify-center rounded-lg p-2 text-slate-500">
                 <Mail className="h-5 w-5" />
@@ -138,12 +152,17 @@ export default function LoginPage() {
                 onChange={onChange}
                 required
                 autoComplete="current-password"
-                className="w-full rounded-xl border bg-white px-3.5 py-2.5 pr-11 border-slate-300 focus:outline-none focus:ring-4 focus:ring-indigo-100"
+                className="w-full rounded-xl border border-gray-300 bg-white
+px-3.5 py-2.5 pr-11
+focus:outline-none focus:ring-2 focus:ring-red-200 focus:border-red-500
+transition"
               />
               <button
                 type="button"
                 onClick={() => setShowPw((s) => !s)}
-                className="absolute inset-y-0 right-0 mr-1.5 my-1.5 inline-flex items-center justify-center rounded-lg p-2 text-slate-500 hover:bg-slate-100"
+                className="absolute inset-y-0 right-0 mr-1.5 my-1.5
+inline-flex items-center justify-center rounded-lg p-2
+text-gray-500 hover:bg-gray-100 transition"
                 aria-label={showPw ? "ซ่อนรหัสผ่าน" : "แสดงรหัสผ่าน"}
               >
                 {showPw ? (
@@ -163,14 +182,14 @@ export default function LoginPage() {
                 name="remember"
                 checked={form.remember}
                 onChange={onChange}
-                className="h-4 w-4 rounded border-slate-300"
+                className="h-4 w-4 rounded border-gray-300 accent-black"
               />
-              <span className="text-slate-700">จำฉันไว้</span>
+              <span className="text-gray-700">จำฉันไว้</span>
             </label>
             <button
               type="button"
               onClick={() => router.push("/forgot-password")}
-              className="font-medium text-indigo-600 hover:underline"
+              className="font-medium text-red-600 hover:underline"
             >
               ลืมรหัสผ่าน?
             </button>
@@ -180,11 +199,13 @@ export default function LoginPage() {
           <button
             type="submit"
             disabled={loading}
-            className={`w-full rounded-xl px-4 py-2.5 font-medium text-white focus:ring-4 ${
-              loading
-                ? "bg-indigo-400 cursor-not-allowed focus:ring-indigo-100"
-                : "bg-indigo-600 hover:bg-indigo-700 focus:ring-indigo-200"
-            }`}
+            className={`w-full rounded-xl px-4 py-2.5 font-medium text-white
+  transition focus:outline-none focus:ring-2 focus:ring-red-200
+  ${
+    loading
+      ? "bg-red-400 cursor-not-allowed"
+      : "bg-red-600 hover:bg-red-700 active:scale-95"
+  }`}
           >
             {loading ? "กำลังเข้าสู่ระบบ..." : "เข้าสู่ระบบ"}
           </button>
@@ -195,7 +216,7 @@ export default function LoginPage() {
               <div className="w-full border-t border-slate-200" />
             </div>
             <div className="relative flex justify-center">
-              <span className="bg-white px-2 text-xs font-medium uppercase tracking-wider text-slate-400">
+              <span className="bg-white px-2 text-xs font-medium text-gray-400">
                 หรือ
               </span>
             </div>
@@ -206,7 +227,12 @@ export default function LoginPage() {
             type="button"
             onClick={googleLogin}
             disabled={loadingGoogle}
-            className="flex w-full items-center justify-center gap-2 rounded-xl bg-white px-4 py-2.5 font-medium text-slate-800 border border-slate-300 hover:bg-slate-50 focus:ring-4 focus:ring-indigo-100 disabled:opacity-60"
+            className="flex w-full items-center justify-center gap-2
+rounded-xl bg-white px-4 py-2.5 font-medium text-gray-800
+border border-gray-300
+hover:bg-gray-50 active:scale-95
+focus:ring-2 focus:ring-red-100
+transition disabled:opacity-60"
             aria-busy={loadingGoogle}
           >
             <GoogleLogo className="h-5 w-5" />
@@ -222,7 +248,7 @@ export default function LoginPage() {
             <button
               type="button"
               onClick={() => router.push("/register")}
-              className="font-medium text-indigo-600 hover:underline"
+              className="font-medium text-red-600 hover:underline"
             >
               ลงทะเบียน
             </button>

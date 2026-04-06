@@ -13,10 +13,13 @@ import { ShoppingCart, Minus, Plus, Trash2, CreditCard } from "lucide-react";
 interface CartItem {
   id: string;
   quantity: number;
+  unitPrice?: number | null;
+  auctionId?: string | null;
   product: {
     id: string;
     name?: string;
     price: number;
+    basePrice?: number;
     salePrice?: number | null;
     imageUrl?: string | null;
     stock: number;
@@ -72,7 +75,7 @@ export default function CartPage() {
     });
     if (res.ok) {
       setItems((prev) =>
-        prev.map((i) => (i.id === itemId ? { ...i, quantity } : i))
+        prev.map((i) => (i.id === itemId ? { ...i, quantity } : i)),
       );
     } else {
       const err = await res.json().catch(() => ({}));
@@ -97,7 +100,7 @@ export default function CartPage() {
   }, [user, lang]);
 
   const subtotal = items.reduce((sum, it) => {
-    const unit = it.product.salePrice ?? it.product.price;
+    const unit = it.unitPrice ?? it.product.salePrice ?? it.product.price;
     return sum + unit * it.quantity;
   }, 0);
   const discount = Math.round(subtotal * discountRate);
@@ -145,7 +148,9 @@ export default function CartPage() {
           {/* ซ้าย: รายการสินค้า */}
           <div className="md:col-span-2 space-y-4">
             {items.map((item) => {
-              const unit = item.product.salePrice ?? item.product.price;
+              const isAuctionItem = Boolean(item.auctionId);
+              const unit =
+                item.unitPrice ?? item.product.salePrice ?? item.product.price;
               const displayName =
                 [
                   item.product?.name,
@@ -153,9 +158,6 @@ export default function CartPage() {
                   (item as any)?.product?.translations?.[0]?.name,
                 ].find((v) => typeof v === "string" && v.trim().length > 0) ??
                 "สินค้า";
-
-              const left = item.product.stock - item.quantity;
-              const low = left <= 5;
 
               return (
                 <div
@@ -181,63 +183,74 @@ export default function CartPage() {
                         >
                           {displayName}
                         </Link>
+                        {isAuctionItem && (
+                          <div className="mt-1 text-xs font-medium text-red-600">
+                            รายการชนะประมูล รอชำระเงิน
+                          </div>
+                        )}
                       </div>
 
-                      <button
-                        onClick={() => removeItem(item.id)}
-                        className="shrink-0 rounded-full p-1.5 text-red-600 hover:bg-red-50"
-                        aria-label="ลบสินค้าออก"
-                        title="ลบสินค้าออก"
-                      >
-                        <Trash2 className="h-4 w-4" />
-                      </button>
+                      {!isAuctionItem && (
+                        <button
+                          onClick={() => removeItem(item.id)}
+                          className="shrink-0 rounded-full p-1.5 text-red-600 hover:bg-red-50"
+                          aria-label="ลบสินค้าออก"
+                          title="ลบสินค้าออก"
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </button>
+                      )}
                     </div>
 
                     <div className="mt-2 flex items-center justify-between">
                       <div className="text-lg font-bold">฿{fmtTHB(unit)}</div>
 
-                      <div className="inline-flex items-center rounded-full border border-black/10 bg-white overflow-hidden">
-                        <button
-                          onClick={() =>
-                            updateQuantity(item.id, item.quantity - 1)
-                          }
-                          className="grid h-8 w-8 place-items-center hover:bg-gray-50 focus:outline-none active:bg-gray-100 transition-colors"
-                          aria-label="ลดจำนวน"
-                          title="ลดจำนวน"
-                        >
-                          <Minus className="h-4 w-4" />
-                        </button>
-
-                        <div className="w-10 select-none text-center text-sm">
-                          {item.quantity}
+                      {isAuctionItem ? (
+                        <div className="rounded-full border border-red-200 bg-red-50 px-3 py-1 text-sm font-semibold text-red-700">
+                          1 ชิ้น
                         </div>
+                      ) : (
+                        <div className="inline-flex items-center rounded-full border border-black/10 bg-white overflow-hidden">
+                          <button
+                            onClick={() =>
+                              updateQuantity(item.id, item.quantity - 1)
+                            }
+                            className="grid h-8 w-8 place-items-center hover:bg-gray-50 focus:outline-none active:bg-gray-100 transition-colors"
+                            aria-label="ลดจำนวน"
+                            title="ลดจำนวน"
+                          >
+                            <Minus className="h-4 w-4" />
+                          </button>
 
-                        <button
-                          onClick={() =>
-                            updateQuantity(item.id, item.quantity + 1)
-                          }
-                          className="grid h-8 w-8 place-items-center hover:bg-gray-50 focus:outline-none active:bg-gray-100 transition-colors"
-                          aria-label="เพิ่มจำนวน"
-                          title="เพิ่มจำนวน"
-                        >
-                          <Plus className="h-4 w-4" />
-                        </button>
-                      </div>
+                          <div className="w-10 select-none text-center text-sm">
+                            {item.quantity}
+                          </div>
+
+                          <button
+                            onClick={() =>
+                              updateQuantity(item.id, item.quantity + 1)
+                            }
+                            className="grid h-8 w-8 place-items-center hover:bg-gray-50 focus:outline-none active:bg-gray-100 transition-colors"
+                            aria-label="เพิ่มจำนวน"
+                            title="เพิ่มจำนวน"
+                          >
+                            <Plus className="h-4 w-4" />
+                          </button>
+                        </div>
+                      )}
                     </div>
 
-                    <div className="mt-1 flex justify-end text-[12px] text-gray-600">
-                      <span className="inline-flex items-baseline gap-1">
-                        <span>คงเหลือในคลัง</span>
-                        <span
-                          className={
-                            low ? "text-red-600 font-semibold" : "text-gray-800"
-                          }
-                        >
-                          {Math.max(0, left)}
+                    {!isAuctionItem && (
+                      <div className="mt-1 flex justify-end text-[12px] text-gray-600">
+                        <span className="inline-flex items-baseline gap-1">
+                          <span>ในคลังสินค้ามีทั้งหมด</span>
+                          <span className={"text-gray-800"}>
+                            {item.product.stock}
+                          </span>
+                          <span>ชิ้น</span>
                         </span>
-                        <span>ชิ้น</span>
-                      </span>
-                    </div>
+                      </div>
+                    )}
                   </div>
                 </div>
               );

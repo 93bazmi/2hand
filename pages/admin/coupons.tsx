@@ -78,7 +78,13 @@ const AdminCouponsPage: NextPage<Props> = ({ initial }) => {
         },
         ...prev,
       ]);
-      setForm({ code: "", discountType: "percent", discountValue: "", usageLimit: "", expiresAt: "" });
+      setForm({
+        code: "",
+        discountType: "percent",
+        discountValue: "",
+        usageLimit: "",
+        expiresAt: "",
+      });
     } else {
       alert("Error: " + (data.error || "ไม่สามารถเพิ่มคูปองได้"));
     }
@@ -99,7 +105,9 @@ const AdminCouponsPage: NextPage<Props> = ({ initial }) => {
     setEditingId(null);
   }
 
-  function handleEditChange(e: ChangeEvent<HTMLInputElement | HTMLSelectElement>) {
+  function handleEditChange(
+    e: ChangeEvent<HTMLInputElement | HTMLSelectElement>,
+  ) {
     setEditForm({ ...editForm, [e.target.name]: e.target.value });
   }
 
@@ -109,7 +117,9 @@ const AdminCouponsPage: NextPage<Props> = ({ initial }) => {
       code: editForm.code.trim(),
       discountType: editForm.discountType,
       discountValue: parseFloat(editForm.discountValue),
-      usageLimit: editForm.usageLimit ? parseInt(editForm.usageLimit, 10) : undefined,
+      usageLimit: editForm.usageLimit
+        ? parseInt(editForm.usageLimit, 10)
+        : undefined,
       expiresAt: editForm.expiresAt || undefined,
     };
     const res = await fetch(`/api/admin/coupons?id=${id}`, {
@@ -132,8 +142,8 @@ const AdminCouponsPage: NextPage<Props> = ({ initial }) => {
                 usageLimit: data.usageLimit,
                 expiresAt: data.expiresAt ?? null,
               }
-            : c
-        )
+            : c,
+        ),
       );
       setEditingId(null);
     } else {
@@ -143,7 +153,9 @@ const AdminCouponsPage: NextPage<Props> = ({ initial }) => {
 
   async function deleteCoupon(id: string) {
     if (!confirm("ลบคูปองนี้ใช่หรือไม่?")) return;
-    const res = await fetch(`/api/admin/coupons?id=${id}`, { method: "DELETE" });
+    const res = await fetch(`/api/admin/coupons?id=${id}`, {
+      method: "DELETE",
+    });
     if (res.status === 204) {
       setCoupons((prev) => prev.filter((c) => c.id !== id));
     } else {
@@ -153,9 +165,11 @@ const AdminCouponsPage: NextPage<Props> = ({ initial }) => {
   }
 
   return (
-    <AdminModern title="จัดการคูปอง (Admin)">
-      <h1 className="text-3xl font-bold mb-4">จัดการคูปอง</h1>
-      <Link href="/" className="text-blue-600 mb-6 block">&larr; กลับหน้าหลัก</Link>
+    <AdminModern title="จัดการคูปอง">
+      <h1 className="text-2xl font-bold mb-4">จัดการคูปอง</h1>
+      <Link href="/" className="text-blue-600 mb-6 block">
+        &larr; กลับหน้าหลัก
+      </Link>
 
       {/* -- Create Form -- */}
       <form onSubmit={addCoupon} className="space-y-4 mb-8 max-w-md">
@@ -215,7 +229,10 @@ const AdminCouponsPage: NextPage<Props> = ({ initial }) => {
       {/* -- Table / Inline Edit -- */}
       <div className="space-y-2">
         {coupons.map((c) => (
-          <div key={c.id} className="grid grid-cols-6 gap-2 border p-3 rounded text-sm items-center">
+          <div
+            key={c.id}
+            className="grid grid-cols-6 gap-2 border p-3 rounded text-sm items-center"
+          >
             {editingId === c.id ? (
               <>
                 <input
@@ -262,7 +279,10 @@ const AdminCouponsPage: NextPage<Props> = ({ initial }) => {
                   >
                     บันทึก
                   </button>
-                  <button onClick={cancelEdit} className="bg-gray-300 px-2 rounded">
+                  <button
+                    onClick={cancelEdit}
+                    className="bg-gray-300 px-2 rounded"
+                  >
                     ยกเลิก
                   </button>
                 </div>

@@ -21,7 +21,7 @@ const DiscountCarousel = dynamic(
   {
     ssr: false,
     loading: () => <CarouselSkeleton />,
-  }
+  },
 );
 
 type AuctionLite = {
@@ -69,11 +69,11 @@ function Section({
     pad === "dense"
       ? "py-2 md:py-2"
       : pad === "normal"
-      ? "py-6 md:py-8"
-      : "py-8 md:py-10";
+        ? "py-6 md:py-8"
+        : "py-8 md:py-10";
 
   return (
-    <section className={`container ${padCls} ${className}`}>
+    <section className={`max-w-7xl mx-auto px-4 ${padCls} ${className}`}>
       {title ? (
         <div className="mb-3 md:mb-4 flex items-end justify-between gap-3">
           <h2 className="text-xl md:text-2xl font-semibold">{title}</h2>
@@ -307,7 +307,7 @@ export const getServerSideProps: GetServerSideProps<HomeProps> = async ({
         salePrice: p!.salePrice ?? null,
         isFeatured: p!.isFeatured,
       };
-    })
+    }),
   );
 
   // 6. Categories
@@ -338,7 +338,9 @@ export const getServerSideProps: GetServerSideProps<HomeProps> = async ({
 
   // 8. Auctions (กำลังเปิดอยู่ จัดเรียงใกล้ปิดก่อน)
   const rawAuctions = await prisma.auction.findMany({
-    where: { endAt: { gt: new Date() } }, // หรือ { status: "OPEN" }
+    where: {
+      status: "LIVE",
+    },
     orderBy: { endAt: "asc" },
     take: 10,
     include: {

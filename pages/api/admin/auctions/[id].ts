@@ -16,29 +16,55 @@ handler.get(async (req, res) => {
 });
 
 handler.patch(async (req, res) => {
-  const admin = await requireAdminApi(req, res);
-  if (!admin) return;
-  const { id } = req.query as { id: string };
-  const b = req.body || {};
+  try {
+    const admin = await requireAdminApi(req, res);
+    if (!admin) return;
 
-  if (b.action === 'cancel') {
-    const a = await adminCancelAuction(id);
-    return res.status(200).json(a);
-  }
-  if (b.action === 'close') {
-    const a = await closeAuction(id);
-    return res.status(200).json(a);
-  }
+    const { id } = req.query as { id: string };
+    const b = req.body || {};
 
-  const updated = await adminUpdateAuction(id, {
-    title: b.title,
-    description: b.description ?? undefined,
-    bidIncrement: b.bidIncrement ? Number(b.bidIncrement) : undefined,
-    startAt: b.startAt ? new Date(b.startAt) : undefined,
-    endAt: b.endAt ? new Date(b.endAt) : undefined,
-    status: typeof b.status === 'string' ? (b.status.toUpperCase() as any) : undefined,
-  });
-  res.status(200).json(updated);
+    console.log("PATCH BODY:", b); // 👈 สำคัญ
+
+    if (b.action === "cancel") {
+      const a = await adminCancelAuction(id);
+      return res.status(200).json(a);
+    }
+
+    if (b.action === "close") {
+      const a = await closeAuction(id);
+      return res.status(200).json(a);
+    }
+
+    const updated = await adminUpdateAuction(id, {
+  title: b.title,
+  description: b.description ?? undefined,
+
+  bidIncrement:
+    b.bidIncrement && !isNaN(Number(b.bidIncrement))
+      ? Number(b.bidIncrement)
+      : undefined,
+
+  startAt:
+    b.startAt && !isNaN(Date.parse(b.startAt))
+      ? new Date(b.startAt)
+      : undefined,
+
+  endAt:
+    b.endAt && !isNaN(Date.parse(b.endAt))
+      ? new Date(b.endAt)
+      : undefined,
+
+  status:
+    typeof b.status === "string"
+      ? b.status.toUpperCase()
+      : undefined,
+});
+
+    res.status(200).json(updated);
+  } catch (err) {
+    console.error("PATCH ERROR:", err); // 👈 จะเห็นสาเหตุจริง
+    res.status(500).json({ error: "Internal Server Error" });
+  }
 });
 
 handler.delete(async (req, res) => {

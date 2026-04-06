@@ -9,11 +9,17 @@ export default function ContactPage() {
     <Layout title={t("contactUsTitle")}>
       <div className="max-w-3xl mx-auto py-12 px-4">
         {/* หัวข้อ */}
-        <h1 className="text-2xl font-semibold mb-2">{t("contactHeading")}</h1>
+        <h1 className="text-3xl font-semibold mb-2">{t("contactHeading")}</h1>
         <hr className="border-t-2 border-gray-400 mb-6" />
 
         {/* ข้อความ */}
         <p className="mb-6 leading-relaxed">{t("contactText")}</p>
+
+        {/* ช่องทางอีเมล */}
+        <p className="mb-2">
+          <span className="font-medium">{t("emailLabel")}:</span>{" "}
+          <span>{t("email")}</span>
+        </p>
 
         {/* ช่องทาง Line */}
         <p className="mb-2">

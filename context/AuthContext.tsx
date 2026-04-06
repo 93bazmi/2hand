@@ -20,7 +20,7 @@ interface User {
 interface AuthContextValue {
   user: User | null;
   loading: boolean;
-  login: (email: string, password: string, remember: boolean) => Promise<void>;
+  login: (email: string, password: string, remember: boolean) => Promise<User>;
   logout: () => Promise<void>;
   adminLogout: () => Promise<void>;
 }
@@ -56,23 +56,34 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   // รหัสผ่าน: server จะตั้งคุกกี้ให้เอง
-  const login = async (email: string, password: string, remember: boolean) => {
+  const login = async (
+    email: string,
+    password: string,
+    remember: boolean,
+  ): Promise<User> => {
     const r = await fetch("/api/auth/login", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      credentials: "include", // แนบ/รับคุกกี้
+      credentials: "include",
       body: JSON.stringify({ email, password, remember }),
     });
+
     const js = await r.json().catch(() => ({}));
     if (!r.ok) throw new Error(js.error || "Login failed");
 
-    // ดึงโปรไฟล์ใหม่จากคุกกี้
-    const pr = await fetch("/api/auth/profile", { credentials: "include" });
-    if (pr.ok) {
-      const { user } = await pr.json();
-      setUser(user);
-    }
-    router.push("/");
+    // ดึง user จาก cookie
+    const pr = await fetch("/api/auth/profile", {
+      credentials: "include",
+    });
+
+    if (!pr.ok) throw new Error("Cannot fetch profile");
+
+    const { user } = await pr.json();
+    console.log("LOGIN USER:", user);
+
+    setUser(user);
+
+    return user; // ✅ สำคัญมาก
   };
 
   const logout = async () => {

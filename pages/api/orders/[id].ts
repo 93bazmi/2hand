@@ -7,7 +7,8 @@ export default async function handler(
   req: NextApiRequest,
   res: NextApiResponse
 ) {
-  const user = await getUserFromToken(req.headers.authorization);
+  const token = req.cookies.token;
+const user = await getUserFromToken(token);
   if (!user) return res.status(401).json({ error: "Unauthorized" });
 
   const orderId = req.query.id as string;

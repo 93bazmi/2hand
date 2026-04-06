@@ -13,10 +13,13 @@ import { Minus, Plus, Tag, Upload } from "lucide-react";
 interface CartItem {
   id: string;
   quantity: number;
+  unitPrice?: number | null;
+  auctionId?: string | null;
   product: {
     id: string;
     name: string;
     price: number;
+    basePrice?: number;
     salePrice?: number | null;
     imageUrl?: string | null;
     stock: number;
@@ -24,6 +27,7 @@ interface CartItem {
 }
 
 type OrderItemPayload = {
+  cartItemId: string;
   productId: string;
   quantity: number;
   priceAtPurchase: number;
@@ -45,7 +49,7 @@ const fmtTHB = (n: number) => n.toLocaleString("th-TH");
 function useCountdown(deadline?: string) {
   const target = useMemo(
     () => (deadline ? new Date(deadline).getTime() : null),
-    [deadline]
+    [deadline],
   );
   const [, force] = useState(0);
   useEffect(() => {
@@ -124,7 +128,7 @@ export default function CheckoutPage() {
       return alert(t("checkout.qtyMax", { stock: item.product.stock }));
 
     setItems((prev) =>
-      prev.map((i) => (i.id === itemId ? { ...i, quantity: newQty } : i))
+      prev.map((i) => (i.id === itemId ? { ...i, quantity: newQty } : i)),
     );
 
     await fetch(`/api/cart`, {
@@ -138,12 +142,12 @@ export default function CheckoutPage() {
   };
 
   const subtotal = items.reduce((s, i) => {
-    const unit = i.product.salePrice ?? i.product.price;
+    const unit = i.unitPrice ?? i.product.salePrice ?? i.product.price;
     return s + unit * i.quantity;
   }, 0);
 
-  // ค่าส่งแบบ Flat (ตามภาพตัวอย่าง 30 บาท)
-  const shippingFee = items.length > 0 ? 30 : 0;
+  // ค่าส่ง
+  const shippingFee = 0;
 
   // ยอดรวมสุทธิ
   const grand = Math.max(subtotal + shippingFee - discountAmount, 0);
@@ -174,9 +178,10 @@ export default function CheckoutPage() {
 
   const createFormOrder = async () => {
     const orderItems: OrderItemPayload[] = items.map((i) => ({
+      cartItemId: i.id,
       productId: i.product.id,
       quantity: i.quantity,
-      priceAtPurchase: i.product.salePrice ?? i.product.price,
+      priceAtPurchase: i.unitPrice ?? i.product.salePrice ?? i.product.price,
     }));
     const fd = new FormData();
     fd.append("items", JSON.stringify(orderItems));
@@ -191,7 +196,38 @@ export default function CheckoutPage() {
     });
   };
 
+  const [errors, setErrors] = useState<Partial<AddressPayload>>({});
+  function validateAddress() {
+    const newErrors: Partial<AddressPayload> = {};
+
+    if (!address.recipient.trim()) newErrors.recipient = "กรุณากรอกชื่อผู้รับ";
+
+    if (!address.line1.trim()) newErrors.line1 = "กรุณากรอกบ้านเลขที่ / ถนน";
+
+    if (!address.line2.trim()) newErrors.line2 = "กรุณากรอกตำบล / อำเภอ";
+
+    if (!address.city.trim()) newErrors.city = "กรุณาเลือกจังหวัด";
+
+    if (!address.postalCode.trim())
+      newErrors.postalCode = "กรุณากรอกรหัสไปรษณีย์";
+
+    setErrors(newErrors);
+
+    return Object.keys(newErrors).length === 0;
+  }
+
   async function onConfirm() {
+    if (!validateAddress()) {
+      setTimeout(() => {
+        document.querySelector(".border-red-500")?.scrollIntoView({
+          behavior: "smooth",
+          block: "center",
+        });
+      }, 100);
+
+      return;
+    }
+
     if (!slipFile) return setPayMsg("กรุณาแนบสลิปการโอนเงิน");
     if (!agree) return setPayMsg("กรุณายอมรับเงื่อนไขก่อนชำระเงิน");
 
@@ -230,29 +266,57 @@ export default function CheckoutPage() {
         </h2>
 
         <div className="grid gap-2 md:grid-cols-2">
-          <input
-            type="text"
-            placeholder={t("checkout.recipient")}
-            value={address.recipient}
-            onChange={(e) =>
-              setAddress({ ...address, recipient: e.target.value })
-            }
-            className="h-9 w-full rounded-lg border border-black/10 px-3 text-sm outline-none focus:ring-2 focus:ring-black/10"
-          />
-          <input
-            type="text"
-            placeholder={t("checkout.line1")}
-            value={address.line1}
-            onChange={(e) => setAddress({ ...address, line1: e.target.value })}
-            className="h-9 w-full rounded-lg border border-black/10 px-3 text-sm outline-none focus:ring-2 focus:ring-black/10"
-          />
-          <input
-            type="text"
-            placeholder={t("checkout.line2")}
-            value={address.line2}
-            onChange={(e) => setAddress({ ...address, line2: e.target.value })}
-            className="h-9 w-full rounded-lg border border-black/10 px-3 text-sm outline-none focus:ring-2 focus:ring-black/10"
-          />
+          <div>
+            <input
+              type="text"
+              placeholder={t("checkout.recipient")}
+              value={address.recipient}
+              onChange={(e) => {
+                setAddress({ ...address, recipient: e.target.value });
+                setErrors((prev) => ({ ...prev, recipient: undefined }));
+              }}
+              className={`h-9 w-full rounded-lg border px-3 text-sm outline-none
+      ${errors.recipient ? "border-red-500" : "border-black/10"}
+    `}
+            />
+            {errors.recipient && (
+              <p className="mt-1 text-xs text-red-500">{errors.recipient}</p>
+            )}
+          </div>
+          <div>
+            <input
+              type="text"
+              placeholder={t("checkout.line1")}
+              value={address.line1}
+              onChange={(e) => {
+                setAddress({ ...address, line1: e.target.value });
+                setErrors((prev) => ({ ...prev, line1: undefined }));
+              }}
+              className={`h-9 w-full rounded-lg border px-3 text-sm outline-none
+      ${errors.line1 ? "border-red-500" : "border-black/10"}
+    `}
+            />
+            {errors.line1 && (
+              <p className="mt-1 text-xs text-red-500">{errors.line1}</p>
+            )}
+          </div>
+          <div>
+            <input
+              type="text"
+              placeholder={t("checkout.line2")}
+              value={address.line2}
+              onChange={(e) => {
+                setAddress({ ...address, line2: e.target.value });
+                setErrors((prev) => ({ ...prev, line2: undefined }));
+              }}
+              className={`h-9 w-full rounded-lg border px-3 text-sm outline-none
+      ${errors.line2 ? "border-red-500" : "border-black/10"}
+    `}
+            />
+            {errors.line2 && (
+              <p className="mt-1 text-xs text-red-500">{errors.line2}</p>
+            )}
+          </div>
           <input
             type="text"
             placeholder={t("checkout.line3")}
@@ -262,33 +326,39 @@ export default function CheckoutPage() {
           />
 
           {/* แถวล่าง: จังหวัด / รหัสไปรษณีย์ / ประเทศ */}
-          <div className="md:col-span-1">
-            {/* ถ้า ProvinceSelect รับ className ได้ ให้ใส่แบบนี้ */}
+          <div>
             <ProvinceSelect
               value={address.city}
-              onChange={(e) => setAddress({ ...address, city: e.target.value })}
-              className="h-9 w-full rounded-lg border border-black/10 px-3 text-sm outline-none focus:ring-2 focus:ring-black/10"
+              onChange={(e) => {
+                setAddress({ ...address, city: e.target.value });
+                setErrors((prev) => ({ ...prev, city: undefined }));
+              }}
+              className={`h-9 w-full rounded-lg border px-3 text-sm outline-none
+      ${errors.city ? "border-red-500" : "border-black/10"}
+    `}
             />
+            {errors.city && (
+              <p className="mt-1 text-xs text-red-500">{errors.city}</p>
+            )}
           </div>
 
-          <input
-            type="text"
-            placeholder={t("checkout.postalCode")}
-            value={address.postalCode}
-            onChange={(e) =>
-              setAddress({ ...address, postalCode: e.target.value })
-            }
-            className="h-9 w-full rounded-lg border border-black/10 px-3 text-sm outline-none focus:ring-2 focus:ring-black/10"
-          />
-          {/* <input
-            type="text"
-            placeholder={t("checkout.country")}
-            value={address.country}
-            onChange={(e) =>
-              setAddress({ ...address, country: e.target.value })
-            }
-            className="h-9 w-full rounded-lg border border-black/10 px-3 text-sm outline-none focus:ring-2 focus:ring-black/10"
-          /> */}
+          <div>
+            <input
+              type="text"
+              placeholder={t("checkout.postalCode")}
+              value={address.postalCode}
+              onChange={(e) => {
+                setAddress({ ...address, postalCode: e.target.value });
+                setErrors((prev) => ({ ...prev, postalCode: undefined }));
+              }}
+              className={`h-9 w-full rounded-lg border px-3 text-sm outline-none
+      ${errors.postalCode ? "border-red-500" : "border-black/10"}
+    `}
+            />
+            {errors.postalCode && (
+              <p className="mt-1 text-xs text-red-500">{errors.postalCode}</p>
+            )}
+          </div>
         </div>
       </section>
 
@@ -418,7 +488,7 @@ export default function CheckoutPage() {
             {/* รายการสินค้า */}
             <ul className="mt-2 list-disc text-sm text-black/80 space-y-1">
               {items.map((i) => {
-                const unit = i.product.salePrice ?? i.product.price;
+                const unit = i.unitPrice ?? i.product.salePrice ?? i.product.price;
                 const line = unit * i.quantity;
                 return (
                   <li
@@ -427,6 +497,9 @@ export default function CheckoutPage() {
                   >
                     <span className="line-clamp-1">
                       {i.product.name}
+                      {i.auctionId && (
+                        <span className="ml-1 text-red-600">(ชนะประมูล)</span>
+                      )}
                       <span className="ml-1 text-gray-500">× {i.quantity}</span>
                     </span>
 
@@ -439,7 +512,11 @@ export default function CheckoutPage() {
             {/* สรุปตัวเลข */}
             <div className="mt-3 space-y-1 text-sm">
               <Row label="ค่าสินค้า" value={`${fmtTHB(subtotal)} บาท`} />
-              <Row label="ค่าส่ง" value={`${fmtTHB(shippingFee)} บาท`} />
+              <Row
+                label="ค่าส่ง"
+                value="ฟรี"
+                valueClass="text-emerald-600 font-semibold"
+              />
               {discountAmount > 0 && (
                 <Row
                   label="ส่วนลด"

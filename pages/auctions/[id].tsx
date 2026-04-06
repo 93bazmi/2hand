@@ -70,11 +70,19 @@ async function getAuction(id: string): Promise<Auction> {
 async function placeBidAPI(id: string, amount: number) {
   const r = await fetch(`/api/auctions/${id}/bids`, {
     method: "POST",
+    credentials: "include", // ✅ สำคัญมาก (ส่ง cookie)
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ amount }),
   });
+
+  if (r.status === 401) {
+    window.location.href = "/login";
+    return;
+  }
+
   if (!r.ok)
     throw new Error((await r.json().catch(() => ({}))).error || "bid-failed");
+
   return r.json();
 }
 
@@ -178,7 +186,7 @@ function DetailContent({
     .sort(
       (a, b) =>
         new Date(b.at ?? b.createdAt ?? 0).getTime() -
-        new Date(a.at ?? a.createdAt ?? 0).getTime()
+        new Date(a.at ?? a.createdAt ?? 0).getTime(),
     );
 
   return (

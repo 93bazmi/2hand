@@ -5,10 +5,18 @@ import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { usePathname } from "next/navigation";
-import { Truck, ShoppingCart, LogOut } from "lucide-react";
+import {
+  ShoppingCart,
+  LogOut,
+  AppWindow,
+  Menu,
+  X,
+  Truck,
+  User,
+} from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
 import Avatar from "@/components/Avatar";
-import useTranslation from "next-translate/useTranslation"; // ⬅️ เพิ่ม
+import useTranslation from "next-translate/useTranslation";
 
 type Item = { label: string; href: string };
 
@@ -54,36 +62,6 @@ function GuestActions() {
   );
 }
 
-/* ---------- สวิตช์ภาษา TH/EN (เดสก์ท็อป) ---------- */
-function LangSwitchDesktop() {
-  const pathname = usePathname();
-  const { lang } = useTranslation();
-
-  const base =
-    "px-2 py-1 text-xs font-semibold rounded border transition-colors";
-  const on = "bg-red-600 text-white border-red-600";
-  const off = "text-slate-700 border-slate-300 hover:bg-slate-100";
-
-  return (
-    <div className="hidden md:flex items-center gap-2">
-      <Link
-        href={pathname}
-        locale="th"
-        className={`${base} ${lang === "th" ? on : off}`}
-      >
-        TH
-      </Link>
-      <Link
-        href={pathname}
-        locale="en"
-        className={`${base} ${lang === "en" ? on : off}`}
-      >
-        EN
-      </Link>
-    </div>
-  );
-}
-
 function UserActions() {
   const { user, logout } = useAuth();
   const [openUserMenu, setOpenUserMenu] = useState(false);
@@ -111,15 +89,16 @@ function UserActions() {
   return (
     <>
       {/* tracking */}
-      {/* <Link
+      <Link
         href="/orders"
         className="inline-flex h-9 w-9 items-center justify-center rounded-full hover:bg-gray-100"
         aria-label="ติดตามพัสดุ"
         title="ติดตามพัสดุ"
       >
         <Truck className="h-5 w-5 text-gray-800 hover:text-red-600 transition-colors" />
-      </Link> */}
+      </Link>
 
+      {/* cart */}
       {/* cart */}
       <Link
         href="/cart"
@@ -129,6 +108,18 @@ function UserActions() {
       >
         <ShoppingCart className="h-5 w-5 text-gray-800 hover:text-red-600 transition-colors" />
       </Link>
+
+      {/* ✅ ADMIN ONLY */}
+      {user?.role?.toUpperCase() === "ADMIN" && (
+        <Link
+          href="/admin"
+          className="inline-flex h-9 w-9 items-center justify-center rounded-full hover:bg-gray-100"
+          aria-label="Admin Dashboard"
+          title="เมนูแอดมิน"
+        >
+          <AppWindow className="h-5 w-5 text-gray-800 hover:text-red-600 transition-colors" />
+        </Link>
+      )}
 
       {/* ✅ สวิตช์ภาษา: อยู่ขวาของตะกร้า ซ้ายของโปรไฟล์ */}
       {/* <div className="hidden md:flex items-center gap-2 mx-1">
@@ -204,12 +195,22 @@ function UserActions() {
           >
             คำสั่งซื้อของฉัน
           </Link>
+          {/* ✅ ADMIN ONLY */}
+          {user?.role?.toUpperCase() === "ADMIN" && (
+            <Link
+              href="/admin"
+              className="block px-3 py-2 text-sm hover:bg-gray-50"
+              role="menuitem"
+            >
+              เมนูแอดมิน
+            </Link>
+          )}
           <button
             onClick={logout}
-            className="flex w-full items-center gap-2 px-3 py-2 text-left text-sm text-gray-800 hover:bg-gray-50"
+            className="flex w-full items-center gap-2 px-3 py-2 text-left text-sm text-red-600 hover:bg-gray-50"
             role="menuitem"
           >
-            <LogOut className="h-4 w-4" />
+            <LogOut className="h-4 w-4 text-red-600" />
             ออกจากระบบ
           </button>
         </div>
@@ -220,7 +221,7 @@ function UserActions() {
 
 export default function Navbar() {
   const pathname = usePathname();
-  const { user } = useAuth();
+  const { user, logout } = useAuth();
   const [mobileOpen, setMobileOpen] = useState(false);
 
   return (
@@ -271,24 +272,32 @@ export default function Navbar() {
         {/* Hamburger (มือถือ) */}
         <button
           aria-label="Toggle menu"
-          className="ml-auto inline-flex h-10 w-10 items-center justify-center rounded-lg hover:bg-gray-100 md:hidden"
           onClick={() => setMobileOpen((v) => !v)}
+          className="ml-auto inline-flex h-10 w-10 items-center justify-center rounded-lg hover:bg-gray-100 md:hidden transition"
         >
-          <span className="block h-0.5 w-5 bg-black transition" />
-          <span className="mt-1 block h-0.5 w-5 bg-black transition" />
-          <span className="mt-1 block h-0.5 w-5 bg-black transition" />
+          {mobileOpen ? (
+            <X
+              size={22}
+              className="text-black transition-transform duration-200 rotate-90"
+            />
+          ) : (
+            <Menu
+              size={22}
+              className="text-black transition-transform duration-200"
+            />
+          )}
         </button>
       </div>
 
       {/* เมนูมือถือ */}
       <div
-        className={[
-          "md:hidden grid transition-[grid-template-rows] duration-300",
-          mobileOpen ? "grid-rows-[1fr]" : "grid-rows-[0fr]",
-        ].join(" ")}
+        className={`md:hidden transition-all duration-300 overflow-hidden ${
+          mobileOpen ? "max-h-[500px] border-t" : "max-h-0"
+        } bg-white`}
       >
-        <div className="overflow-hidden border-t border-gray-200 bg-white">
-          <nav className="mx-auto max-w-7xl px-4 py-2">
+        <div className="px-4 py-3 space-y-3">
+          {/* MENU */}
+          <div className="space-y-1">
             {items.map(({ href, label }) => {
               const isActive = pathname === href;
               return (
@@ -296,84 +305,68 @@ export default function Navbar() {
                   key={href}
                   href={href}
                   onClick={() => setMobileOpen(false)}
-                  className={[
-                    "block rounded-md px-2 py-2 text-sm transition-colors",
-                    isActive
-                      ? "font-semibold text-black bg-red-50 ring-1 ring-red-600/20"
-                      : "text-gray-700 hover:text-black hover:bg-gray-50",
-                  ].join(" ")}
+                  className={`block px-3 py-2 rounded-lg text-sm font-medium transition
+            ${
+              isActive
+                ? "bg-red-50 text-red-600"
+                : "text-gray-700 hover:bg-gray-50"
+            }`}
                 >
                   {label}
                 </Link>
               );
             })}
+          </div>
 
-            {/* สวิตช์ภาษา (มือถือ) */}
-            <LangSwitchMobile />
+          {/* ACTION GRID */}
+          <div className="grid grid-cols-2 gap-2 pt-3 border-t">
+            <Link
+              href="/orders"
+              className="flex items-center justify-center gap-2 border rounded-lg py-2 text-sm"
+            >
+              <Truck size={16} />
+              ติดตาม
+            </Link>
 
-            {/* ปุ่มทางขวาบนมือถือ */}
-            <div className="mt-3 border-t border-gray-200 pt-3 flex items-center gap-2">
-              {user ? (
-                <>
-                  <Link
-                    href="/orders"
-                    onClick={() => setMobileOpen(false)}
-                    className="rounded-full border border-gray-300 px-3 py-1.5 text-xs"
-                  >
-                    ติดตามพัสดุ
-                  </Link>
-                  <Link
-                    href="/cart"
-                    onClick={() => setMobileOpen(false)}
-                    className="rounded-full border border-gray-300 px-3 py-1.5 text-xs"
-                  >
-                    ตะกร้า
-                  </Link>
-                  <Link
-                    href="/account"
-                    onClick={() => setMobileOpen(false)}
-                    className="rounded-full border border-gray-300 px-3 py-1.5 text-xs"
-                  >
-                    โปรไฟล์
-                  </Link>
-                </>
-              ) : (
-                <GuestActions />
-              )}
-            </div>
-          </nav>
+            <Link
+              href="/cart"
+              className="flex items-center justify-center gap-2 border rounded-lg py-2 text-sm"
+            >
+              <ShoppingCart size={16} />
+              ตะกร้า
+            </Link>
+
+            <Link
+              href="/account"
+              className="flex items-center justify-center gap-2 border rounded-lg py-2 text-sm"
+            >
+              <User size={16} />
+              โปรไฟล์
+            </Link>
+
+            {user?.role?.toUpperCase() === "ADMIN" && (
+              <Link
+                href="/admin"
+                className="flex items-center justify-center gap-2 border rounded-lg py-2 text-sm"
+              >
+                <AppWindow size={16} />
+                แอดมิน
+              </Link>
+            )}
+          </div>
+
+          {/* LOGOUT */}
+          {user && (
+            <button
+              onClick={logout}
+              className="w-full py-2 rounded-lg border border-red-600 text-red-600
+        hover:bg-red-50 text-sm font-medium"
+            >
+              ออกจากระบบ
+            </button>
+          )}
         </div>
       </div>
     </nav>
-  );
-}
-
-/* ---------- สวิตช์ภาษา (มือถือ) แยก component ---------- */
-function LangSwitchMobile() {
-  const pathname = usePathname();
-  const { lang } = useTranslation();
-
-  const base =
-    "px-2 py-1 mr-2 text-xs font-semibold rounded border transition-colors";
-  const on = "bg-red-600 text-white border-red-600";
-  const off = "text-slate-700 border-slate-300 hover:bg-slate-100";
-
-  return (
-    <div className="mt-3 flex items-center">
-      <Link
-        href={pathname}
-        locale="th"
-        className={`${base} ${lang === "th" ? on : off}`}
-      >
-        TH
-      </Link>
-      <Link
-        href={pathname}
-        locale="en"
-        className={`${base} ${lang === "en" ? on : off}`}
-      >
-        EN
-      </Link>
-    </div>
   );
 }
