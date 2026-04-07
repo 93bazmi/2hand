@@ -8,21 +8,28 @@ export default function CallbackPage() {
 
   useEffect(() => {
     const run = async () => {
-      const res = await fetch("/api/auth/profile", {
-        credentials: "include",
-      });
+      try {
+        const res = await fetch("/api/auth/profile", {
+          credentials: "include",
+        });
 
-      if (!res.ok) {
+        if (!res.ok) {
+          router.push("/login");
+          return;
+        }
+
+        const data = await res.json().catch(() => null);
+
+        const user = data?.user;
+
+        if (user?.role?.toUpperCase() === "ADMIN") {
+          router.push("/admin");
+        } else {
+          router.push("/");
+        }
+      } catch (err) {
+        console.error("Callback error:", err);
         router.push("/login");
-        return;
-      }
-
-      const { user } = await res.json();
-
-      if (user?.role?.toUpperCase() === "ADMIN") {
-        router.push("/admin");
-      } else {
-        router.push("/");
       }
     };
 

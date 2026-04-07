@@ -35,21 +35,27 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   // โหลดโปรไฟล์จากคุกกี้ HttpOnly ตอน mount
   useEffect(() => {
     let cancelled = false;
+
     (async () => {
       try {
-        const r = await fetch("/api/auth/profile", { credentials: "include" });
+        const r = await fetch("/api/auth/profile", {
+          credentials: "include",
+        });
+
         if (!cancelled && r.ok) {
-          const { user } = await r.json();
-          setUser(user);
+          const data = await r.json().catch(() => null);
+          setUser(data?.user ?? null);
         } else if (!cancelled) {
           setUser(null);
         }
-      } catch {
+      } catch (err) {
+        console.error("Profile fetch error:", err);
         if (!cancelled) setUser(null);
       } finally {
         if (!cancelled) setLoading(false);
       }
     })();
+
     return () => {
       cancelled = true;
     };
@@ -78,8 +84,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     if (!pr.ok) throw new Error("Cannot fetch profile");
 
-    const { user } = await pr.json();
-    console.log("LOGIN USER:", user);
+    const data = await pr.json().catch(() => null);
+    const user = data?.user;
+
+    if (!user) throw new Error("Invalid profile data");
 
     setUser(user);
 
