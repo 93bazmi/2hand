@@ -1,6 +1,12 @@
 // next.config.js
 const nextTranslate = require("next-translate-plugin");
 
+const nextConfig = {
+  turbopack: {},
+};
+
+module.exports = nextConfig;
+
 /** @type {import('next').NextConfig} */
 module.exports = nextTranslate({
   reactStrictMode: true,

@@ -1,41 +1,49 @@
+// pages/api/admin/uploads.ts
 import type { NextApiRequest, NextApiResponse } from "next";
-import nextConnect from "next-connect";
-import multer from "multer";
-import path from "path";
+import { IncomingForm, File as FormidableFile } from "formidable";
 import fs from "fs";
+import path from "path";
 
-export const config = { api: { bodyParser: false } };
+export const config = {
+  api: {
+    bodyParser: false,
+  },
+};
 
 const uploadDir = path.join(process.cwd(), "public", "uploads");
-if (!fs.existsSync(uploadDir)) fs.mkdirSync(uploadDir, { recursive: true });
+fs.mkdirSync(uploadDir, { recursive: true });
 
-const storage = multer.diskStorage({
-  destination: (_req, _file, cb) => cb(null, uploadDir),
-  filename: (_req, file, cb) => {
-    const ext = path.extname(file.originalname) || ".jpg";
-    const name = `${Date.now()}-${Math.random().toString(36).slice(2)}${ext}`;
-    cb(null, name);
-  },
-});
-const upload = multer({ storage });
+export default function handler(req: NextApiRequest, res: NextApiResponse) {
+  if (req.method !== "POST") {
+    res.setHeader("Allow", "POST");
+    return res.status(405).json({ error: "Method Not Allowed" });
+  }
 
-const handler = nextConnect<NextApiRequest, NextApiResponse>({
-  onError(err, _req, res) {
-    res.status(500).json({ error: err.message || "Upload error" });
-  },
-  onNoMatch(_req, res) {
-    res.status(405).json({ error: "Method Not Allowed" });
-  },
-});
+  const form = new IncomingForm({
+    uploadDir,
+    keepExtensions: true,
+    maxFileSize: 5 * 1024 * 1024,
+  });
 
-handler.use(upload.single("file"));
+  form.parse(req, (err, _fields, files) => {
+    if (err) {
+      console.error(err);
+      return res.status(500).json({ error: "Upload error" });
+    }
 
-handler.post((req: any, res) => {
-  const file = req.file as Express.Multer.File | undefined;
-  if (!file) return res.status(400).json({ error: "No file" });
-  // URL ที่เสิร์ฟได้เลย
-  const url = `/uploads/${file.filename}`;
-  res.status(201).json({ url });
-});
+    const fileField = files.file as
+      | FormidableFile
+      | FormidableFile[]
+      | undefined;
 
-export default handler;
+    if (!fileField) {
+      return res.status(400).json({ error: "No file" });
+    }
+
+    const file = Array.isArray(fileField) ? fileField[0] : fileField;
+    const fileName = path.basename(file.filepath);
+    const url = `/uploads/${fileName}`;
+
+    return res.status(201).json({ url });
+  });
+}
