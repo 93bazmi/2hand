@@ -47,7 +47,7 @@ export default function CartPage() {
       const res = await fetch(`/api/cart?locale=${lang}`, {
         credentials: "include",
       });
-      if (!res.ok) throw new Error("Failed to load cart");
+      if (!res.ok) throw new Error("โหลดตะกร้าสินค้าไม่สำเร็จ");
       const data = await res.json();
       setItems(data.items || []);
     } catch (e) {
@@ -63,7 +63,7 @@ export default function CartPage() {
     const item = items.find((i) => i.id === itemId);
     if (!item) return;
     if (quantity > item.product.stock) {
-      alert(t("cart.exceedStock", { stock: item.product.stock }));
+      alert(t("จำนวนเกิน stock ที่มี", { stock: item.product.stock }));
       return;
     }
 
@@ -79,7 +79,7 @@ export default function CartPage() {
       );
     } else {
       const err = await res.json().catch(() => ({}));
-      alert(t("cart.error") + ": " + (err.error || "Unknown"));
+      alert(t("เกิดข้อผิดพลาด") + ": " + (err.error || "ไม่ทราบสาเหตุ"));
     }
   };
 
@@ -109,16 +109,16 @@ export default function CartPage() {
   // ยังไม่ล็อกอิน
   if (!user) {
     return (
-      <Layout title={t("cart.title")}>
+      <Layout title={t("ตะกร้าสินค้า")}>
         <div className="py-20 text-center">
           <ShoppingCart className="mx-auto mb-4 h-12 w-12 text-gray-400" />
           <p className="mb-4">
-            {t("cart.loginPrompt")}{" "}
+            {t("กรุณา")}{" "}
             <Link
               href="/login"
               className="font-semibold text-red-600 hover:underline"
             >
-              {t("cart.login")}
+              {t("เข้าสู่ระบบ")}
             </Link>
           </p>
         </div>
@@ -127,20 +127,20 @@ export default function CartPage() {
   }
 
   return (
-    <Layout title={t("cart.title")}>
-      <h1 className="mt-10 mb-5 text-2xl font-bold">{t("cart.title")}</h1>
+    <Layout title={t("ตะกร้าสินค้า")}>
+      <h1 className="mt-10 mb-5 text-2xl font-bold">{t("ตะกร้าสินค้า")}</h1>
 
       {loading ? (
-        <p>{t("cart.loading")}</p>
+        <p>{t("กำลังโหลด...")}</p>
       ) : items.length === 0 ? (
         <div className="grid place-items-center rounded-2xl border border-black/10 bg-white p-12 text-center">
           <ShoppingCart className="mb-3 h-12 w-12 text-gray-400" />
-          <p className="mb-5 text-gray-600">{t("cart.empty")}</p>
+          <p className="mb-5 text-gray-600">{t("ตะกร้าสินค้าว่าง")}</p>
           <Link
             href="/all-products"
             className="inline-flex items-center rounded-xl bg-black px-5 py-2.5 text-sm font-semibold text-white hover:bg-zinc-900"
           >
-            {t("cart.browse")}
+            {t("ดูสินค้าเพิ่มเติม")}
           </Link>
         </div>
       ) : (

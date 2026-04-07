@@ -68,7 +68,7 @@ function useCountdown(deadline?: string) {
 
 /* ---------- Page ---------- */
 export default function CheckoutPage() {
-  const refNo = useMemo(() => `#${Date.now()}`, []); // คำนวณครั้งเดียวตอน mount
+  const [refNo, setRefNo] = useState(""); // คำนวณครั้งเดียวตอน mount
   const { t } = useTranslation("common");
   const { user } = useAuth();
   const router = useRouter();
@@ -120,12 +120,16 @@ export default function CheckoutPage() {
       .finally(() => setLoading(false));
   }, [user, router]);
 
+  useEffect(() => {
+    setRefNo(`#${Date.now()}`);
+  }, []);
+
   const updateQuantity = async (itemId: string, newQty: number) => {
     const item = items.find((i) => i.id === itemId);
     if (!item) return;
-    if (newQty < 1) return alert(t("checkout.qtyMin"));
+    if (newQty < 1) return alert(t("จำนวนต้องไม่น้อยกว่า 1"));
     if (newQty > item.product.stock)
-      return alert(t("checkout.qtyMax", { stock: item.product.stock }));
+      return alert(t("จำนวนเกิน stock สูงสุด", { stock: item.product.stock }));
 
     setItems((prev) =>
       prev.map((i) => (i.id === itemId ? { ...i, quantity: newQty } : i)),
@@ -155,7 +159,7 @@ export default function CheckoutPage() {
   const applyCoupon = async () => {
     setCouponError(null);
     if (!couponCode.trim()) {
-      setCouponError(t("checkout.couponEmpty"));
+      setCouponError(t("กรุณากรอกรหัสคูปอง"));
       return;
     }
     const res = await fetch("/api/coupons", {
@@ -246,30 +250,26 @@ export default function CheckoutPage() {
     }
   }
 
-  if (loading) return <p>{t("checkout.loading")}</p>;
+  if (loading) return <p>{t("กำลังโหลด...")}</p>;
 
   return (
-    <Layout title={t("checkout.title")}>
+    <Layout title={t("ชำระเงิน")}>
       {/* <div className="mb-4 text-[13px] text-gray-500">
         <span>Home</span>
         <span className="mx-1.5">/</span>
         <span className="text-gray-900">{t("checkout.heading")}</span>
       </div> */}
-      <h1 className="mt-10 mb-4 text-2xl font-bold ">
-        {t("checkout.heading")}
-      </h1>
+      <h1 className="mt-10 mb-4 text-2xl font-bold ">{t("ชำระเงิน")}</h1>
 
       {/* ที่อยู่จัดส่ง — คอมแพ็กให้เท่าการ์ดอื่น */}
       <section className=" mb-6 rounded-2xl border border-black/10 bg-white p-4">
-        <h2 className="mb-2 text-base font-semibold">
-          {t("checkout.addressHeading")}
-        </h2>
+        <h2 className="mb-2 text-base font-semibold">{t("ที่อยู่จัดส่ง")}</h2>
 
         <div className="grid gap-2 md:grid-cols-2">
           <div>
             <input
               type="text"
-              placeholder={t("checkout.recipient")}
+              placeholder={t("ชื่อผู้รับ")}
               value={address.recipient}
               onChange={(e) => {
                 setAddress({ ...address, recipient: e.target.value });
@@ -286,7 +286,7 @@ export default function CheckoutPage() {
           <div>
             <input
               type="text"
-              placeholder={t("checkout.line1")}
+              placeholder={t("บ้านเลขที่ / ถนน")}
               value={address.line1}
               onChange={(e) => {
                 setAddress({ ...address, line1: e.target.value });
@@ -303,7 +303,7 @@ export default function CheckoutPage() {
           <div>
             <input
               type="text"
-              placeholder={t("checkout.line2")}
+              placeholder={t("ตำบล / อำเภอ")}
               value={address.line2}
               onChange={(e) => {
                 setAddress({ ...address, line2: e.target.value });
@@ -319,7 +319,7 @@ export default function CheckoutPage() {
           </div>
           <input
             type="text"
-            placeholder={t("checkout.line3")}
+            placeholder={t("แขวง / เขต หรือ บรรทัดที่ 3")}
             value={address.line3}
             onChange={(e) => setAddress({ ...address, line3: e.target.value })}
             className="h-9 w-full rounded-lg border border-black/10 px-3 text-sm outline-none focus:ring-2 focus:ring-black/10"
@@ -345,7 +345,7 @@ export default function CheckoutPage() {
           <div>
             <input
               type="text"
-              placeholder={t("checkout.postalCode")}
+              placeholder={t("รหัสไปรษณีย์")}
               value={address.postalCode}
               onChange={(e) => {
                 setAddress({ ...address, postalCode: e.target.value });
@@ -488,7 +488,8 @@ export default function CheckoutPage() {
             {/* รายการสินค้า */}
             <ul className="mt-2 list-disc text-sm text-black/80 space-y-1">
               {items.map((i) => {
-                const unit = i.unitPrice ?? i.product.salePrice ?? i.product.price;
+                const unit =
+                  i.unitPrice ?? i.product.salePrice ?? i.product.price;
                 const line = unit * i.quantity;
                 return (
                   <li

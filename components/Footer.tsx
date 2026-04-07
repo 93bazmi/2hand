@@ -18,11 +18,13 @@ export default function Footer() {
           aria-label="Footer"
           className="grid grid-cols-1 gap-3 text-center sm:grid-cols-2 md:grid-cols-5 md:gap-4"
         >
-          <FooterLink href="/qa">{t("footer.faq")}</FooterLink>
-          <FooterLink href="/contact">{t("footer.contact")}</FooterLink>
-          <FooterLink href="/privacy-policy">{t("footer.privacy")}</FooterLink>
-          <FooterLink href="/cookie-policy">{t("footer.cookies")}</FooterLink>
-          <FooterLink href="/terms">{t("footer.terms")}</FooterLink>
+          <FooterLink href="/qa">{t("คำถามที่พบบ่อย")}</FooterLink>
+          <FooterLink href="/contact">{t("ติดต่อเรา")}</FooterLink>
+          <FooterLink href="/privacy-policy">
+            {t("นโยบายความเป็นส่วนตัว")}
+          </FooterLink>
+          <FooterLink href="/cookie-policy">{t("นโยบายคุกกี้")}</FooterLink>
+          <FooterLink href="/terms">{t("เงื่อนไขการใช้งาน")}</FooterLink>
         </nav>
 
         {/* divider */}

@@ -5,6 +5,7 @@ import { getSessionUserFromReq } from "@/lib/auth";
 import formidable, { type File } from "formidable";
 import path from "path";
 import fs from "fs/promises";
+import { supabaseAdmin } from "@/lib/supabase";
 
 export const config = { api: { bodyParser: false } };
 
@@ -146,14 +147,25 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       const file = Array.isArray(rawFileField) ? rawFileField[0] : rawFileField;
 
       if (file && (file as any).filepath) {
-        const uploadDir = path.join(process.cwd(), "public", "uploads", "slips");
-        await fs.mkdir(uploadDir, { recursive: true });
-        const orig = (file as any).originalFilename || "slip.jpg";
-        const ext = path.extname(orig);
-        const filename = `${Date.now()}-${Math.random().toString(36).slice(2)}${ext}`;
-        const dest = path.join(uploadDir, filename);
-        await fs.rename((file as any).filepath, dest);
-        slipUrl = `/uploads/slips/${filename}`;
+        const buffer = await fs.readFile((file as any).filepath);
+
+const orig = (file as any).originalFilename || "slip.jpg";
+const ext = path.extname(orig);
+const fileName = `slips/${Date.now()}-${Math.random().toString(36).slice(2)}${ext}`;
+
+const { error } = await supabaseAdmin.storage
+  .from("slips")
+  .upload(fileName, buffer, {
+    contentType: (file as any).mimetype || "image/jpeg",
+  });
+
+if (error) throw error;
+
+const { data: publicUrl } = supabaseAdmin.storage
+  .from("slips")
+  .getPublicUrl(fileName);
+
+slipUrl = publicUrl.publicUrl;
       } else if (typeof fields.slipUrl === "string") {
         slipUrl = fields.slipUrl;
       }

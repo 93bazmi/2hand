@@ -150,7 +150,7 @@ export default function HomePage({
   const siteTitle = t("siteTitle");
 
   return (
-    <Layout title={siteTitle}>
+    <Layout title={"2hand"}>
       {/* SEO: ใส่ JSON-LD แบบย่อสำหรับสินค้าขายดี */}
       <Head>
         <script
@@ -232,7 +232,6 @@ export default function HomePage({
 export const getServerSideProps: GetServerSideProps<HomeProps> = async ({
   locale,
 }) => {
-  console.log("ENV:", process.env.DATABASE_URL);
   const lang = locale ?? "th";
 
   // 1. Hero banners

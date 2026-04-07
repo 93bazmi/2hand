@@ -184,7 +184,7 @@ export default function OrdersPage() {
   const fetcher = (url: string) =>
     fetch(`${url}?locale=${lang}`, { credentials: "include" })
       .then((res) => {
-        if (!res.ok) throw new Error(t("ordersLoadError"));
+        if (!res.ok) throw new Error(t("โหลดคำสั่งซื้อไม่สำเร็จ"));
         return res.json();
       })
       .then((data) => data.orders as OrderSummary[]);
@@ -246,27 +246,35 @@ export default function OrdersPage() {
       // ✅ สลับ tab ไป completed
       setActiveStatus("completed");
     } catch {
-      alert(t("ordersConfirmError"));
+      alert(t("เกิดข้อผิดพลาดในการยืนยัน"));
     } finally {
       setUpdatingId(null);
     }
   };
 
+  const STATUS_LABEL = {
+    pending: "รอดำเนินการ",
+    processing: "กำลังดำเนินการ",
+    shipped: "จัดส่งแล้ว",
+    completed: "สำเร็จ",
+    cancelled: "ยกเลิก",
+  };
+
   /* ---------- UI ---------- */
   return (
-    <Layout title={t("myOrders")}>
+    <Layout title={t("คำสั่งซื้อของฉัน")}>
       <div className="mx-auto max-w-7xl px-4 py-6 grid gap-6 md:grid-cols-[280px_1fr]">
         <AccountSidebar />
 
         <section className="rounded-2xl border border-gray-200 bg-white p-6">
           <div className="mb-5 flex items-center justify-between">
-            <h1 className="text-lg font-semibold">{t("myOrders")}</h1>
+            <h1 className="text-lg font-semibold">{t("คำสั่งซื้อของฉัน")}</h1>
           </div>
           <hr className="mb-6 border-gray-200" />
 
           {!ready ? (
             <div className="p-6 text-center text-gray-500">
-              {t("ordersLoading")}
+              {t("กำลังโหลดคำสั่งซื้อ...")}
             </div>
           ) : (
             <>
@@ -293,7 +301,7 @@ export default function OrdersPage() {
                             : "h-4 w-4 text-gray-500"
                         }
                       />
-                      <span>{t(`status.${st}`)}</span>
+                      <span>{STATUS_LABEL[st]}</span>
                     </button>
                   );
                 })}
@@ -302,7 +310,7 @@ export default function OrdersPage() {
               {/* Error */}
               {error && (
                 <div className="mb-4 rounded-lg border border-rose-200 bg-rose-50 p-4 text-rose-700">
-                  {t("ordersLoadError")}
+                  {t("โหลดข้อมูลไม่สำเร็จ")}
                 </div>
               )}
 
@@ -337,8 +345,8 @@ export default function OrdersPage() {
                 <div className="p-10 text-center bg-white border border-gray-200 rounded-xl">
                   <PackageOpen className="mx-auto h-10 w-10 text-gray-400 mb-3" />
                   <p className="text-gray-700 text-lg font-medium">
-                    {t("noOrdersInStatus", {
-                      status: t(`status.${activeStatus}`),
+                    {t("ไม่มีคำสั่งซื้อในสถานะ", {
+                      status: STATUS_LABEL[activeStatus],
                     })}
                   </p>
                 </div>
@@ -365,7 +373,7 @@ export default function OrdersPage() {
                             {/* หัวการ์ด */}
                             <div className="mb-4">
                               <p className="text-lg sm:text-xl font-semibold">
-                                {t("orderNumber", { id: o.id.slice(-6) })}
+                                {`คำสั่งซื้อ #${o.id.slice(-6)}`}
                               </p>
                               <p className="text-sm text-gray-500">
                                 {dateFmt(o.createdAt)}
@@ -393,7 +401,7 @@ export default function OrdersPage() {
                                         />
                                       ) : (
                                         <div className="w-full h-full flex items-center justify-center text-gray-300 text-xs">
-                                          {t("noImage")}
+                                          {t("ไม่มีรูป")}
                                         </div>
                                       )}
                                     </div>
@@ -403,9 +411,7 @@ export default function OrdersPage() {
                                       </p>
                                       <p className="text-xs sm:text-sm text-gray-500">
                                         {it.quantity} ×{" "}
-                                        {t("currency", {
-                                          amount: it.priceAtPurchase,
-                                        })}
+                                        {`฿${o.totalAmount.toLocaleString("th-TH")}`}
                                       </p>
                                     </div>
                                   </div>
@@ -425,13 +431,13 @@ export default function OrdersPage() {
                               title={t(`status.${st}`)}
                             >
                               <StIcon className="h-4 w-4" />
-                              {t(`status.${st}`)}
+                              {STATUS_LABEL[st]}
                             </div>
 
                             {/* มุมล่างขวา: ราคารวม */}
                             <div className="mt-4 sm:mt-0 text-right">
                               <div className="text-xl font-semibold">
-                                {t("currency", { amount: o.totalAmount })}
+                                {`฿${o.totalAmount.toLocaleString("th-TH")}`}
                               </div>
                             </div>
 
@@ -456,12 +462,12 @@ export default function OrdersPage() {
                                 {updatingId === o.id ? (
                                   <>
                                     <Loader2 className="h-4 w-4 animate-spin" />
-                                    {t("confirming")}
+                                    {t("กำลังยืนยัน...")}
                                   </>
                                 ) : (
                                   <>
                                     <CheckCircle2 className="h-4 w-4" />
-                                    {t("confirmReceived")}
+                                    {t("ยืนยันรับสินค้า")}
                                   </>
                                 )}
                               </button>
