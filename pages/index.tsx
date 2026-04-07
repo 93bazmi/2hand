@@ -232,6 +232,7 @@ export default function HomePage({
 export const getServerSideProps: GetServerSideProps<HomeProps> = async ({
   locale,
 }) => {
+  console.log("ENV:", process.env.DATABASE_URL);
   const lang = locale ?? "th";
 
   // 1. Hero banners
