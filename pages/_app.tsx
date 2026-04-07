@@ -7,12 +7,7 @@ import Head from "next/head";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { useRouter } from "next/router";
 
-// สร้าง instance เดียวตลอดแอป
 const queryClient = new QueryClient();
-
-// เปลี่ยนเป็น import จาก next-translate-plugin
-import appWithI18n from "next-translate/appWithI18n";
-import i18nConfig from "../i18n.json";
 
 function MyApp({ Component, pageProps }: AppProps) {
   const router = useRouter();
@@ -24,7 +19,6 @@ function MyApp({ Component, pageProps }: AppProps) {
         <meta name="viewport" content="width=device-width, initial-scale=1" />
       </Head>
 
-      {/* ครอบด้วย React Query provider */}
       <QueryClientProvider client={queryClient}>
         <AuthProvider>
           <div className={isAdminPage ? "admin-page" : "user-page"}>
@@ -36,5 +30,4 @@ function MyApp({ Component, pageProps }: AppProps) {
   );
 }
 
-// ห่อด้วย HOC จาก plugin
-export default appWithI18n(MyApp as any, i18nConfig);
+export default MyApp;
