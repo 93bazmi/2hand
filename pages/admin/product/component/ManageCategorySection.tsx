@@ -2,7 +2,11 @@
 
 import { useState, useEffect } from "react";
 
-export default function ManageCategorySection() {
+interface Props {
+  onCreated?: () => void;
+}
+
+export default function ManageCategorySection({ onCreated }: Props) {
   const [cats, setCats] = useState<any[]>([]);
   const [name, setName] = useState("");
 
@@ -22,8 +26,17 @@ export default function ManageCategorySection() {
     });
 
     const data = await res.json();
-    setCats((c) => [...c, data]);
+
+    setCats((c) => [
+      ...c,
+      {
+        ...data,
+        name: data.name ?? data.nameTh ?? data.translations?.[0]?.name,
+      },
+    ]);
     setName("");
+
+    onCreated?.();
   };
 
   return (

@@ -81,7 +81,7 @@ export default function RegisterPage() {
       setAuthError(
         msg.includes("unique") || msg.toLowerCase().includes("already")
           ? "อีเมลนี้ถูกใช้งานแล้ว"
-          : msg || "สมัครไม่สำเร็จ"
+          : msg || "สมัครไม่สำเร็จ",
       );
     } finally {
       setLoading(false);
@@ -112,11 +112,13 @@ export default function RegisterPage() {
                 placeholder="QweryDesign"
                 value={form.name}
                 onChange={onChange}
-                className={`w-full rounded-xl border bg-white px-3.5 py-2.5 pr-11 ${
-                  errors.name
-                    ? "border-rose-400 focus:ring-rose-100"
-                    : "border-slate-300 focus:ring-indigo-100"
-                } focus:outline-none focus:ring-4`}
+                className={`w-full rounded-xl border bg-white px-3.5 py-2.5 pr-11
+${
+  errors.name
+    ? "border-rose-400 focus:ring-rose-100"
+    : "border-gray-300 focus:ring-red-200 focus:border-red-500"
+}
+focus:outline-none focus:ring-2 transition`}
               />
               <span className="pointer-events-none absolute inset-y-0 right-0 mr-1.5 my-1.5 inline-flex items-center justify-center rounded-lg p-2 text-slate-500">
                 <User className="h-5 w-5" />
@@ -140,11 +142,13 @@ export default function RegisterPage() {
                 value={form.email}
                 onChange={onChange}
                 autoComplete="email"
-                className={`w-full rounded-xl border bg-white px-3.5 py-2.5 pr-11 ${
-                  errors.email
-                    ? "border-rose-400 focus:ring-rose-100"
-                    : "border-slate-300 focus:ring-indigo-100"
-                } focus:outline-none focus:ring-4`}
+                className={`w-full rounded-xl border bg-white px-3.5 py-2.5 pr-11
+${
+  errors.name
+    ? "border-rose-400 focus:ring-rose-100"
+    : "border-gray-300 focus:ring-red-200 focus:border-red-500"
+}
+focus:outline-none focus:ring-2 transition`}
               />
               <span className="pointer-events-none absolute inset-y-0 right-0 mr-1.5 my-1.5 inline-flex items-center justify-center rounded-lg p-2 text-slate-500">
                 <Mail className="h-5 w-5" />
@@ -170,16 +174,18 @@ export default function RegisterPage() {
                 onFocus={() => setPwFocused(true)}
                 onBlur={() => setPwFocused(false)}
                 autoComplete="new-password"
-                className={`w-full rounded-xl border bg-white px-3.5 py-2.5 pr-11 hide-edge-reveal ${
-                  errors.password
-                    ? "border-rose-400 focus:ring-rose-100"
-                    : "border-slate-300 focus:ring-indigo-100"
-                } focus:outline-none focus:ring-4`}
+                className={`w-full rounded-xl border bg-white px-3.5 py-2.5 pr-11
+${
+  errors.name
+    ? "border-rose-400 focus:ring-rose-100"
+    : "border-gray-300 focus:ring-red-200 focus:border-red-500"
+}
+focus:outline-none focus:ring-2 transition`}
               />
               <button
                 type="button"
                 onClick={() => setShowPw((s) => !s)}
-                className="absolute inset-y-0 right-0 mr-1.5 my-1.5 inline-flex items-center justify-center rounded-lg p-2 text-slate-500 hover:bg-slate-100"
+                className="absolute inset-y-0 right-0 mr-1.5 my-1.5 inline-flex items-center justify-center rounded-lg p-2 text-gray-500 hover:bg-gray-100 transition"
                 aria-label={showPw ? "ซ่อนรหัสผ่าน" : "แสดงรหัสผ่าน"}
               >
                 {showPw ? (
@@ -228,11 +234,13 @@ export default function RegisterPage() {
                 value={form.confirm}
                 onChange={onChange}
                 autoComplete="new-password"
-                className={`w-full rounded-xl border bg-white px-3.5 py-2.5 pr-11 hide-edge-reveal ${
-                  errors.confirm
-                    ? "border-rose-400 focus:ring-rose-100"
-                    : "border-slate-300 focus:ring-indigo-100"
-                } focus:outline-none focus:ring-4`}
+                className={`w-full rounded-xl border bg-white px-3.5 py-2.5 pr-11
+${
+  errors.name
+    ? "border-rose-400 focus:ring-rose-100"
+    : "border-gray-300 focus:ring-red-200 focus:border-red-500"
+}
+focus:outline-none focus:ring-2 transition`}
               />
               <button
                 type="button"
@@ -262,14 +270,14 @@ export default function RegisterPage() {
               name="agree"
               checked={form.agree}
               onChange={onChange}
-              className="h-4 w-4 rounded border-slate-300 text-indigo-600 focus:ring-indigo-200"
+              className="h-4 w-4 rounded border-gray-300 accent-black"
             />
             <label htmlFor="agree" className="text-sm text-slate-700">
               ฉันยอมรับ{" "}
               <button
                 type="button"
                 onClick={() => router.push("/terms")}
-                className="text-indigo-600 hover:underline"
+                className="text-gray-400 hover:underline"
               >
                 ข้อตกลงการใช้งาน
               </button>
@@ -282,11 +290,13 @@ export default function RegisterPage() {
           <button
             type="submit"
             disabled={loading}
-            className={`mt-2 w-full rounded-xl px-4 py-2.5 font-medium text-white focus:ring-4 ${
-              loading
-                ? "bg-indigo-400 cursor-not-allowed focus:ring-indigo-100"
-                : "bg-indigo-600 hover:bg-indigo-700 focus:ring-indigo-200"
-            }`}
+            className={`mt-2 w-full rounded-xl px-4 py-2.5 font-medium text-white
+  transition focus:outline-none focus:ring-2 focus:ring-red-200
+  ${
+    loading
+      ? "bg-gray-400 cursor-not-allowed"
+      : "bg-black hover:bg-red-800 active:scale-95"
+  }`}
           >
             {loading ? "กำลังลงทะเบียน..." : "ลงทะเบียน"}
           </button>
@@ -296,7 +306,7 @@ export default function RegisterPage() {
             <button
               type="button"
               onClick={() => router.push("/login")}
-              className="font-medium text-indigo-600 hover:underline"
+              className="font-medium text-red-600 hover:underline"
             >
               เข้าสู่ระบบ
             </button>

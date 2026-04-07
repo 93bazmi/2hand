@@ -16,7 +16,11 @@ interface Product {
   imageUrl?: string;
 }
 
-export default function ManageProductSection() {
+interface Props {
+  refreshKey?: number;
+}
+
+export default function ManageProductSection({ refreshKey }: Props) {
   const [items, setItems] = useState<Product[]>([]);
   const [editItem, setEditItem] = useState<Product | null>(null);
   const [categories, setCategories] = useState<any[]>([]);
@@ -41,9 +45,13 @@ export default function ManageProductSection() {
     const products = (d.items || d).map((p: any) => ({
       ...p,
       nameTh:
-        p.nameTh || p.translations?.find((t: any) => t.locale === "th")?.name || "",
+        p.nameTh ||
+        p.translations?.find((t: any) => t.locale === "th")?.name ||
+        "",
       nameEn:
-        p.nameEn || p.translations?.find((t: any) => t.locale === "en")?.name || "",
+        p.nameEn ||
+        p.translations?.find((t: any) => t.locale === "en")?.name ||
+        "",
       descTh:
         p.descTh ||
         p.translations?.find((t: any) => t.locale === "th")?.description ||
@@ -59,7 +67,7 @@ export default function ManageProductSection() {
   useEffect(() => {
     // Fetch products
     loadProducts().catch((err) =>
-      console.error("Error fetching products:", err)
+      console.error("Error fetching products:", err),
     );
 
     // Fetch categories
@@ -67,7 +75,7 @@ export default function ManageProductSection() {
       .then((r) => r.json())
       .then((d) => setCategories(d))
       .catch((err) => console.error("Error fetching categories:", err));
-  }, []);
+  }, [refreshKey]);
 
   // 🗑 ลบ
   const remove = async (id: string) => {

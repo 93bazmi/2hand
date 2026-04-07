@@ -9,9 +9,10 @@ interface Category {
 
 interface Props {
   onCreated?: () => void;
+  refreshKey?: number;
 }
 
-export default function CreateProductSection({ onCreated }: Props) {
+export default function CreateProductSection({ onCreated, refreshKey }: Props) {
   const [form, setForm] = useState({
     nameTh: "",
     nameEn: "",
@@ -33,7 +34,7 @@ export default function CreateProductSection({ onCreated }: Props) {
     fetch("/api/categories?locale=th")
       .then((r) => r.json())
       .then(setCategories);
-  }, []);
+  }, [refreshKey]);
 
   const onChange = (e: any) => {
     const { name, value, files } = e.target;
