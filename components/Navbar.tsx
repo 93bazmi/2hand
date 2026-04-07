@@ -320,38 +320,57 @@ export default function Navbar() {
 
           {/* ACTION GRID */}
           <div className="grid grid-cols-2 gap-2 pt-3 border-t">
-            <Link
-              href="/orders"
-              className="flex items-center justify-center gap-2 border rounded-lg py-2 text-sm"
-            >
-              <Truck size={16} />
-              ติดตาม
-            </Link>
+            {user ? (
+              <>
+                <Link
+                  href="/orders"
+                  className="flex items-center justify-center gap-2 border rounded-lg py-2 text-sm"
+                >
+                  <Truck size={16} />
+                  ติดตาม
+                </Link>
 
-            <Link
-              href="/cart"
-              className="flex items-center justify-center gap-2 border rounded-lg py-2 text-sm"
-            >
-              <ShoppingCart size={16} />
-              ตะกร้า
-            </Link>
+                <Link
+                  href="/cart"
+                  className="flex items-center justify-center gap-2 border rounded-lg py-2 text-sm"
+                >
+                  <ShoppingCart size={16} />
+                  ตะกร้า
+                </Link>
 
-            <Link
-              href="/account"
-              className="flex items-center justify-center gap-2 border rounded-lg py-2 text-sm"
-            >
-              <User size={16} />
-              โปรไฟล์
-            </Link>
+                <Link
+                  href="/account"
+                  className="flex items-center justify-center gap-2 border rounded-lg py-2 text-sm"
+                >
+                  <User size={16} />
+                  โปรไฟล์
+                </Link>
 
-            {user?.role?.toUpperCase() === "ADMIN" && (
-              <Link
-                href="/admin"
-                className="flex items-center justify-center gap-2 border rounded-lg py-2 text-sm"
-              >
-                <AppWindow size={16} />
-                แอดมิน
-              </Link>
+                {user?.role?.toUpperCase() === "ADMIN" && (
+                  <Link
+                    href="/admin"
+                    className="flex items-center justify-center gap-2 border rounded-lg py-2 text-sm"
+                  >
+                    <AppWindow size={16} />
+                    แอดมิน
+                  </Link>
+                )}
+              </>
+            ) : (
+              <>
+                <Link
+                  href="/register"
+                  className="flex items-center justify-center rounded-lg py-2 text-sm font-semibold border"
+                >
+                  สมัครสมาชิก
+                </Link>
+                <Link
+                  href="/login"
+                  className="flex items-center justify-center rounded-lg py-2 text-sm font-semibold text-white bg-red-600"
+                >
+                  เข้าสู่ระบบ
+                </Link>
+              </>
             )}
           </div>
 

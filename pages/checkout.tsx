@@ -384,7 +384,7 @@ export default function CheckoutPage() {
               <div className="w-[240px] md:w-[270px] shrink-0">
                 <div className="mx-auto w-[320px] max-w-full">
                   <img
-                    src="/images/QR_code.png" // แทนที่ด้วย URL จากแบ็กเอนด์ถ้ามี
+                    src="/images/qr_code.png" // แทนที่ด้วย URL จากแบ็กเอนด์ถ้ามี
                     alt="Thai QR PromptPay"
                     className="w-full aspect-square rounded-md object-contain"
                   />
