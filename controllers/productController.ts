@@ -32,16 +32,23 @@ export async function createProduct(
   const { name, description, price, stock, categoryId, imageUrl } = req.body;
   try {
     const product = await prisma.product.create({
-      data: {
-        name,
-        description,
-        price: parseFloat(price),
-        stock: parseInt(stock, 10),
-        // ถ้าไม่มีหมวดหมู่หรือรูป ให้ตัดสองบรรทัดนี้ออก
-        categoryId: categoryId || undefined,
-        imageUrl: imageUrl || undefined,
-      },
-    });
+  data: {
+    price: parseFloat(price),
+    stock: parseInt(stock, 10),
+    categoryId: categoryId || undefined,
+    imageUrl: imageUrl || undefined,
+
+    translations: {
+      create: [
+        {
+          locale: "th",
+          name,
+          description,
+        },
+      ],
+    },
+  },
+});
     res.status(201).json(product);
   } catch (err: any) {
     res.status(400).json({ error: err.message });

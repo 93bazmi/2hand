@@ -29,7 +29,8 @@ export default function AdminSidebar() {
   const [mobileOpen, setMobileOpen] = useState(false);
   const { adminLogout } = useAuth();
   const router = useRouter();
-  const pathname = usePathname();
+
+  const pathname = usePathname() || "";
 
   // ✅ นับจำนวน LIVE auctions (ดึงจาก public API ก็พอสำหรับ badge)
   const [liveCount, setLiveCount] = useState<number | null>(null);
@@ -73,7 +74,7 @@ export default function AdminSidebar() {
         badge: liveCount,
       },
     ],
-    [liveCount]
+    [liveCount],
   );
 
   const handleLogout = () => {
@@ -93,8 +94,8 @@ export default function AdminSidebar() {
           ? "bg-white text-black"
           : "text-white hover:bg-gray-900"
         : active
-        ? "bg-white text-black"
-        : "text-white hover:bg-gray-900") +
+          ? "bg-white text-black"
+          : "text-white hover:bg-gray-900") +
       " flex items-center justify-between px-3 py-2 rounded-md transition-colors";
 
     return (
