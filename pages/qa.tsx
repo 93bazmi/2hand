@@ -19,8 +19,10 @@ export default function QaPage() {
   const staticFaqs: Faq[] = [
     {
       id: "1",
-      question: t("faq1.question"),
-      answer: t("faq1.answer"),
+      question: t("หลังจากประมูลจบแล้วต้องทำอย่างไรต่อ?"),
+      answer: t(
+        "เมื่อจบการประมูล รายการจะถูกเพิ่มไปยังหน้าตะกร้าของผู้ชนะ เพื่อรอการชำระเงิน",
+      ),
     },
   ];
 
@@ -37,20 +39,22 @@ export default function QaPage() {
     });
 
     if (!res.ok) {
-      alert(t("qaSentError"));
+      alert(t("เกิดข้อผิดพลาด โปรดลองใหม่"));
     } else {
       setNewQ("");
-      alert(t("qaSentSuccess"));
+      alert(t("ส่งคำถามเรียบร้อย! ทีมงานจะตอบกลับเร็วๆ นี้"));
     }
 
     setLoading(false);
   };
 
   return (
-    <Layout title={t("qaTitle")}>
+    <Layout title={t("คำถามที่พบบ่อย")}>
       <div className="max-w-3xl mx-auto px-4 py-8">
         {/* Title */}
-        <h1 className="text-3xl font-bold mb-6 text-black">{t("qaTitle")}</h1>
+        <h1 className="text-3xl font-bold mb-6 text-black">
+          {t("ถาม-ตอบ (Q/A)")}
+        </h1>
 
         {/* Ask Question Card */}
         <div className="bg-white border border-black/10 rounded-xl shadow-sm p-5 mb-10">
@@ -58,7 +62,7 @@ export default function QaPage() {
             <textarea
               value={newQ}
               onChange={(e) => setNewQ(e.target.value)}
-              placeholder={t("qaPlaceholder")}
+              placeholder={t("พิมพ์คำถามของคุณที่นี่...")}
               rows={4}
               required
               className="w-full border border-gray-300 rounded-lg p-3 mb-3
@@ -74,7 +78,7 @@ export default function QaPage() {
                 hover:bg-red-700 active:scale-95 transition
                 disabled:opacity-50 font-medium"
               >
-                {loading ? t("qaSubmitting") : t("qaSubmit")}
+                {loading ? t("กำลังส่ง...") : t("ส่งคำถาม")}
               </button>
             </div>
           </form>
@@ -82,7 +86,7 @@ export default function QaPage() {
 
         {/* FAQ Section */}
         <h2 className="text-2xl font-semibold mb-4 text-black">
-          {t("qaFaqHeading")}
+          {t("คำถามที่พบบ่อย")}
         </h2>
 
         <div className="space-y-4">
