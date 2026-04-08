@@ -1,6 +1,106 @@
-![image](https://github.com/user-attachments/assets/9897509f-e094-4487-b087-c54353cf7578)
-![image](https://github.com/user-attachments/assets/a7e49a69-4c13-4a32-a5d8-d65a613eb81e)
-![image](https://github.com/user-attachments/assets/f8a49202-0fbe-4f22-94b9-d81d7b8c5001)
+# **2hand Online Shopping**
+**2hand Online Shopping** is a **second-hand clothing marketplace** with an integrated **auction system** and admin dashboard, built by extending the ICN_FREEZE e-commerce template.
 
-![image](https://github.com/user-attachments/assets/66df2af0-4d2b-426e-87ab-e4c07a3f1cc3)
-DATABASE_URL="postgresql://postgres:pensiri123@localhost:5432/icn_freeze?schema=public"
+## ❤️ Live Demo
+
+https://2hand-two.vercel.app/
+
+## 🛠️ Tech Stack
+
+* **Frontend:** Next.js, TypeScript, Tailwind CSS
+* **Backend:** Node.js, Next.js API Routes (REST API)
+* **Database:** Supabase (PostgreSQL) with Prisma ORM
+* **Authentication:** JWT (stored in cookies), Google OAuth
+* **Architecture:** MVC Pattern (Models, Services, Controllers)
+* **Deployment:** Vercel
+
+## 🚀 Installation
+
+### 1. Clone the repository
+
+```bash
+git clone https://github.com/93bazmi/2hand.git
+cd 2hand
+```
+
+### 2. Install dependencies
+
+```bash
+npm install
+```
+
+### 3. Set up environment variables
+
+Create a `.env` file in the root directory and add:
+
+```env
+DATABASE_URL=your_supabase_database_url
+JWT_SECRET=your_jwt_secret
+NEXT_PUBLIC_BASE_URL=http://localhost:3000
+
+# Google OAuth
+GOOGLE_CLIENT_ID=your_google_client_id
+GOOGLE_CLIENT_SECRET=your_google_client_secret
+```
+
+### 4. Set up database (Prisma)
+
+```bash
+npx prisma generate
+npx prisma migrate dev --name init
+```
+
+### 5. Run the development server
+
+```bash
+npm run dev
+```
+
+Open in your browser:
+http://localhost:3000
+
+## 📸 Screenshots
+
+### 🔐 Authentication (Login)
+
+![Login](./screenshots/login.png)
+
+
+### 🏠 Home Page
+
+![Home](./screenshots/home.png)
+
+### 👕 Product Listing
+
+![Products](./screenshots/products.png)
+
+### 🔍 Product Detail
+
+![Detail](./screenshots/product-detail.png)
+
+### 🔥 Auction System
+
+![Auction](./screenshots/auction-detail.png)
+![Auction](./screenshots/auction-bid.png)
+
+### 🛒 Shopping Cart
+
+![Cart](./screenshots/cart.png)
+
+### 📦 Order Tracking
+
+![Tracking](./screenshots/tracking.png)
+
+### 🗃️ Admin - Order Management
+
+![Admin Order](./screenshots/admin-orders.png)
+
+### 🛠️ Admin - Product Management
+
+![Admin Product](./screenshots/admin-products.png)
+
+### ⚖️ Admin - Auction Management
+
+![Admin Auction](./screenshots/admin-auction.png)
+
+
