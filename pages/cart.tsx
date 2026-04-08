@@ -189,8 +189,16 @@ export default function CartPage() {
                           </div>
                         )}
                       </div>
+                      <button
+                        onClick={() => removeItem(item.id)}
+                        className="shrink-0 rounded-full p-1.5 text-red-600 hover:bg-red-50"
+                        aria-label="ลบสินค้าออก"
+                        title="ลบสินค้าออก"
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </button>
 
-                      {!isAuctionItem && (
+                      {/* {!isAuctionItem && (
                         <button
                           onClick={() => removeItem(item.id)}
                           className="shrink-0 rounded-full p-1.5 text-red-600 hover:bg-red-50"
@@ -199,7 +207,7 @@ export default function CartPage() {
                         >
                           <Trash2 className="h-4 w-4" />
                         </button>
-                      )}
+                      )} */}
                     </div>
 
                     <div className="mt-2 flex items-center justify-between">

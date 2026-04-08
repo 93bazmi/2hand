@@ -7,7 +7,29 @@ import path from "path";
 import fs from "fs/promises";
 import { supabaseAdmin } from "@/lib/supabase";
 
+type OrderItemInput = {
+  cartItemId: string;
+  productId: string;
+  quantity: number;
+  priceAtPurchase: number;
+};
+
 export const config = { api: { bodyParser: false } };
+
+// 🔥 แปลง formidable เป็น promise (สำคัญมาก)
+function parseForm(req: NextApiRequest) {
+  const form = formidable({ multiples: false });
+
+  return new Promise<{
+    fields: formidable.Fields;
+    files: formidable.Files;
+  }>((resolve, reject) => {
+    form.parse(req, (err, fields, files) => {
+      if (err) reject(err);
+      else resolve({ fields, files });
+    });
+  });
+}
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   if (req.method !== "POST") {
@@ -15,163 +37,148 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     return res.status(405).end(`Method ${req.method} Not Allowed`);
   }
 
-  const form = formidable({ multiples: false });
+  try {
+    // ✅ parse form แบบ await
+    const { fields, files } = await parseForm(req);
 
-  form.parse(req, async (err, fields, files) => {
-    if (err) {
-      console.error("Form parse error:", err);
-      return res.status(500).json({ error: "Cannot parse form data" });
+    // ✅ auth
+    const user = await getSessionUserFromReq(req);
+    if (!user) return res.status(401).json({ error: "Unauthorized" });
+
+    const first = (v: any): string | null =>
+      Array.isArray(v) ? v[0] ?? null : v ?? null;
+
+    // -------- Address --------
+    const recipient = first(fields.recipient);
+    const line1 = first(fields.line1);
+    const line2 = first(fields.line2);
+    const line3 = first(fields.line3);
+    const city = first(fields.city);
+    const postalCode = first(fields.postalCode);
+    const country = first(fields.country);
+    const paymentMethod = first(fields.paymentMethod);
+    const couponCode = first(fields.couponCode);
+
+    if (!recipient || !line1 || !city || !country || !paymentMethod) {
+      return res.status(400).json({ error: "Missing address/payment" });
     }
 
-    try {
-      // ✅ ตรวจ user จากคุกกี้ HttpOnly
-      const user = await getSessionUserFromReq(req);
-      if (!user) return res.status(401).json({ error: "Unauthorized" });
+    // -------- Items --------
+    const rawItems = fields.items;
+    const itemsStr =
+      typeof rawItems === "string"
+        ? rawItems
+        : Array.isArray(rawItems)
+        ? rawItems[0]
+        : null;
 
-      const first = (v: any): string | null =>
-        Array.isArray(v) ? v[0] ?? null : (v ?? null);
+    if (!itemsStr) {
+      return res.status(400).json({ error: "Missing items" });
+    }
 
-      // -------- Address & Payment --------
-      const recipient = first(fields.recipient);
-      const line1 = first(fields.line1);
-      const line2 = first(fields.line2);
-      const line3 = first(fields.line3);
-      const city = first(fields.city);
-      const postalCode = first(fields.postalCode);
-      const country = first(fields.country);
-      const paymentMethod = first(fields.paymentMethod);
-      const couponCode = first(fields.couponCode);
+    const items: OrderItemInput[] = JSON.parse(itemsStr);
 
-      if (!recipient || !line1 || !city || !country || !paymentMethod) {
-        return res.status(400).json({ error: "Missing required address or payment fields" });
+    const cartItemIds = items.map((it: any) => it.cartItemId);
+
+    const cartItems = await prisma.cartItem.findMany({
+      where: {
+        id: { in: cartItemIds },
+        cart: { userId: user.id },
+      },
+      include: {
+        product: true,
+      },
+    });
+
+    if (cartItems.length !== items.length) {
+      return res.status(400).json({ error: "Cart mismatch" });
+    }
+
+    const cartMap = new Map(cartItems.map((c) => [c.id, c]));
+
+    const normalizedItems = items.map((it: any) => {
+      const cartItem = cartMap.get(it.cartItemId);
+      if (!cartItem) throw new Error("CART_ITEM_NOT_FOUND");
+
+      const price =
+        cartItem.unitPrice ??
+        cartItem.product.salePrice ??
+        cartItem.product.price;
+
+      return {
+        productId: cartItem.productId,
+        quantity: cartItem.quantity,
+        priceAtPurchase: price,
+        stock: cartItem.product.stock,
+      };
+    });
+
+    // -------- Stock check --------
+    for (const it of normalizedItems) {
+      if (it.stock < it.quantity) {
+        return res.status(400).json({ error: "Stock not enough" });
       }
+    }
 
-      // -------- Items --------
-      const rawItems = fields.items;
-      const itemsStr =
-        typeof rawItems === "string"
-          ? rawItems
-          : Array.isArray(rawItems) && typeof rawItems[0] === "string"
-          ? rawItems[0]
-          : null;
+    // -------- Total --------
+    const totalAmount = normalizedItems.reduce(
+      (sum, it) => sum + it.priceAtPurchase * it.quantity,
+      0
+    );
 
-      if (!itemsStr) return res.status(400).json({ error: "Missing order items" });
+    let discount = 0;
+    let couponId: string | null = null;
 
-      const items: {
-        cartItemId?: string;
-        productId: string;
-        quantity: number;
-        priceAtPurchase: number;
-      }[] = JSON.parse(itemsStr);
-
-      const localeParam = req.query.locale;
-      const locale =
-        typeof localeParam === "string" && (localeParam === "th" || localeParam === "en")
-          ? localeParam
-          : "th";
-
-      const cartItemIds = items.map((it) => it.cartItemId).filter(Boolean) as string[];
-      if (cartItemIds.length !== items.length) {
-        return res.status(400).json({ error: "ข้อมูลสินค้าในตะกร้าไม่ถูกต้อง" });
-      }
-
-      const cartItems = await prisma.cartItem.findMany({
-        where: {
-          id: { in: cartItemIds },
-          cart: { userId: user.id },
-        },
-        include: {
-          product: {
-            include: {
-              translations: { where: { locale }, take: 1, select: { name: true } },
-            },
-          },
-        },
+    if (couponCode) {
+      const coupon = await prisma.coupon.findUnique({
+        where: { code: couponCode },
       });
 
-      if (cartItems.length !== items.length) {
-        return res.status(400).json({ error: "พบสินค้าบางรายการไม่อยู่ในตะกร้าปัจจุบัน" });
+      if (coupon) {
+        couponId = coupon.id;
+        discount =
+          coupon.discountType === "percent"
+            ? (totalAmount * (coupon.discountValue ?? 0)) / 100
+            : coupon.discountValue ?? 0;
       }
+    }
 
-      const cartItemMap = new Map(cartItems.map((item) => [item.id, item]));
+    const totalFinal = Math.max(totalAmount - discount, 0);
 
-      const normalizedItems = items.map((it) => {
-        const cartItem = cartItemMap.get(it.cartItemId as string);
-        if (!cartItem) throw new Error("CART_ITEM_NOT_FOUND");
-        if (cartItem.productId !== it.productId) throw new Error("CART_ITEM_PRODUCT_MISMATCH");
-        if (cartItem.quantity !== it.quantity) throw new Error("CART_ITEM_QUANTITY_MISMATCH");
+    // -------- Upload slip --------
+    let slipUrl: string | null = null;
 
-        const unitPrice =
-          cartItem.unitPrice ?? cartItem.product.salePrice ?? cartItem.product.price;
+    const rawFileField = files.slipFile as File | File[] | undefined;
 
-        return {
-          cartItemId: cartItem.id,
-          productId: cartItem.productId,
-          quantity: cartItem.quantity,
-          priceAtPurchase: unitPrice,
-          productName: cartItem.product.translations[0]?.name ?? "Unknown",
-          stock: cartItem.product.stock,
-        };
-      });
+const rawFile = Array.isArray(rawFileField)
+  ? rawFileField[0]
+  : rawFileField;
+    if (rawFile?.filepath) {
+      const buffer = await fs.readFile(rawFile.filepath);
 
-      // ตรวจสต็อก
-      for (const it of normalizedItems) {
-        if (it.stock < it.quantity) {
-          return res.status(400).json({ error: `สต็อกสินค้า ${it.productName} ไม่เพียงพอ` });
-        }
-      }
+      const ext = path.extname(rawFile.originalFilename || ".jpg");
+      const fileName = `slips/${Date.now()}-${Math.random()
+        .toString(36)
+        .slice(2)}${ext}`;
 
-      // -------- ยอดรวม / คูปอง --------
-      const totalAmount = normalizedItems.reduce(
-        (sum, it) => sum + it.priceAtPurchase * it.quantity,
-        0
-      );
+      const { error } = await supabaseAdmin.storage
+        .from("slips")
+        .upload(fileName, buffer, {
+          contentType: rawFile.mimetype || "image/jpeg",
+        });
 
-      let discountValue = 0;
-      let couponId: string | null = null;
-      if (couponCode) {
-        const coupon = await prisma.coupon.findUnique({ where: { code: couponCode } });
-        if (coupon) {
-          couponId = coupon.id;
-          discountValue =
-            coupon.discountType === "percent"
-              ? (totalAmount * (coupon.discountValue ?? 0)) / 100
-              : coupon.discountValue ?? 0;
-        }
-      }
-      const totalAfterDiscount = Math.max(totalAmount - discountValue, 0);
+      if (error) throw error;
 
-      // -------- สลิป (ไฟล์/URL) --------
-      let slipUrl: string | null = null;
-      const rawFileField = (files.slipFile ?? files.slipUrl) as File | File[] | undefined;
-      const file = Array.isArray(rawFileField) ? rawFileField[0] : rawFileField;
+      const { data } = supabaseAdmin.storage
+        .from("slips")
+        .getPublicUrl(fileName);
 
-      if (file && (file as any).filepath) {
-        const buffer = await fs.readFile((file as any).filepath);
+      slipUrl = data.publicUrl;
+    }
 
-const orig = (file as any).originalFilename || "slip.jpg";
-const ext = path.extname(orig);
-const fileName = `slips/${Date.now()}-${Math.random().toString(36).slice(2)}${ext}`;
-
-const { error } = await supabaseAdmin.storage
-  .from("slips")
-  .upload(fileName, buffer, {
-    contentType: (file as any).mimetype || "image/jpeg",
-  });
-
-if (error) throw error;
-
-const { data: publicUrl } = supabaseAdmin.storage
-  .from("slips")
-  .getPublicUrl(fileName);
-
-slipUrl = publicUrl.publicUrl;
-      } else if (typeof fields.slipUrl === "string") {
-        slipUrl = fields.slipUrl;
-      }
-
-      // -------- Transaction: สร้างออเดอร์ + ตัดสต็อก + เคลียร์ตะกร้า (ลบ cartItem ก่อน cart) --------
-      const order = await prisma.$transaction(async (tx) => {
+    // 🔥 Transaction (ปลอดภัยแล้ว)
+    const order = await prisma.$transaction(
+      async (tx) => {
         const created = await tx.order.create({
           data: {
             userId: user.id,
@@ -184,7 +191,7 @@ slipUrl = publicUrl.publicUrl;
             country,
             paymentMethod,
             slipUrl,
-            totalAmount: totalAfterDiscount,
+            totalAmount: totalFinal,
             couponId: couponId ?? undefined,
             items: {
               create: normalizedItems.map((it) => ({
@@ -194,50 +201,42 @@ slipUrl = publicUrl.publicUrl;
               })),
             },
           },
-          include: {
-            items: {
-              include: {
-                product: {
-                  include: {
-                    translations: { where: { locale }, take: 1, select: { name: true } },
-                  },
-                },
-              },
-            },
-          },
+          include: { items: true },
         });
 
-        // ตัดสต็อก
+        // ✅ update stock
         for (const it of normalizedItems) {
           await tx.product.update({
             where: { id: it.productId },
-            data: { stock: { decrement: it.quantity } },
+            data: {
+              stock: {
+                decrement: it.quantity,
+              },
+            },
           });
         }
 
-        // ✅ เคลียร์ตะกร้าแบบถูกลำดับ
-        await tx.cartItem.deleteMany({ where: { cart: { userId: user.id } } });
-        await tx.cart.deleteMany({ where: { userId: user.id } });
+        // ✅ clear cart
+        await tx.cartItem.deleteMany({
+          where: { cart: { userId: user.id } },
+        });
+
+        await tx.cart.deleteMany({
+          where: { userId: user.id },
+        });
 
         return created;
-      });
+      },
+      {
+        timeout: 10000, // 🔥 กัน Vercel timeout
+      }
+    );
 
-      // map ชื่อสินค้าตาม locale สำหรับ response
-      const result = {
-        ...order,
-        items: order.items.map((it) => ({
-          ...it,
-          product: {
-            ...it.product,
-            name: it.product.translations[0]?.name ?? "Unknown",
-          },
-        })),
-      };
-
-      return res.status(201).json(result);
-    } catch (e: any) {
-      console.error("Create order error:", e);
-      return res.status(500).json({ error: "เกิดข้อผิดพลาดในการบันทึกคำสั่งซื้อ" });
-    }
-  });
+    return res.status(201).json(order);
+  } catch (err) {
+    console.error("Create order error:", err);
+    return res.status(500).json({
+      error: "Create order failed",
+    });
+  }
 }
