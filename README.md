@@ -1,4 +1,4 @@
-# **2Hand Thrift Store**
+# **2Hand Thrift Store** 👕
 **2Hand Thrift Store** is a web application for buying and selling second-hand clothing, featuring an integrated **auction system** and admin dashboard. This project is built by extending the ICN_FREEZE e-commerce template.
 
 ## ❤️ Live Demo
@@ -7,8 +7,8 @@ https://2hand-two.vercel.app/
 
 ## 🛠️ Tech Stack
 
-* **Frontend:** Next.js, TypeScript, Tailwind CSS
-* **Backend:** Node.js, Next.js API Routes (REST API)
+* **Frontend:** Next.js (React), TypeScript, Tailwind CSS  
+* **Backend:** Next.js API Routes (Node.js runtime)  
 * **Database:** Supabase (PostgreSQL) with Prisma ORM
 * **Authentication:** JWT (stored in cookies), Google OAuth
 * **Architecture:** MVC Pattern (Models, Services, Controllers)
