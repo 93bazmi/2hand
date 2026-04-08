@@ -7,12 +7,27 @@ https://2hand-two.vercel.app/
 
 ## 🛠️ Tech Stack
 
-* **Frontend:** Next.js (React), TypeScript, Tailwind CSS  
-* **Backend:** Next.js API Routes (Node.js runtime)  
-* **Database:** Supabase (PostgreSQL) with Prisma ORM
-* **Authentication:** JWT (stored in cookies), Google OAuth
-* **Architecture:** MVC Pattern (Models, Services, Controllers)
-* **Deployment:** Vercel
+**Frontend** 
+* Next.js (React)
+* TypeScript
+* Tailwind CSS
+
+**Backend**
+* Node.js (runtime)
+* Next.js API Routes
+
+**Database** 
+* Supabase (PostgreSQL) with Prisma ORM
+
+**Authentication**
+* JWT (stored in cookies)
+* Google OAuth
+
+**Architecture** 
+* MVC Pattern (Models, Services, Controllers)
+
+**Deployment** 
+* Vercel
 
 ## 🚀 Installation
 
