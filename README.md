@@ -1,5 +1,5 @@
-# **2hand Online Shopping**
-**2hand Online Shopping** is a **second-hand clothing marketplace** with an integrated **auction system** and admin dashboard, built by extending the ICN_FREEZE e-commerce template.
+# **2Hand Thrift Store**
+**2Hand Thrift Store** is a web application for buying and selling second-hand clothing, featuring an integrated **auction system** and admin dashboard. This project is built by extending the ICN_FREEZE e-commerce template.
 
 ## ❤️ Live Demo
 
